@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#6f5cf5" />
+  <title>Meu Dashboard Financeiro</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">$</div>
+        <div>
+          <h1>Meu Dashboard Financeiro</h1>
+          <p id="greeting">Controle simples, visual e completo</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-ghost" id="btnImport">⬆ Importar extrato</button>
+        <button class="btn btn-primary" id="btnAdd">+ Novo lançamento</button>
+      </div>
+    </header>
+
+    <section class="profile-row">
+      <div class="profile-select-wrap">
+        <button class="profile-button" id="profileButton">
+          <span id="profileIcon">⭐</span>
+          <span id="profileName">Pessoal</span>
+          <span class="chevron">▾</span>
+        </button>
+        <span class="save-status" id="saveStatus">● Salvo</span>
+        <div class="profile-menu hidden" id="profileMenu">
+          <div id="profileList"></div>
+          <button class="profile-menu-action" id="btnNewProfile">＋ Novo perfil financeiro</button>
+          <button class="profile-menu-action" id="btnManageProfiles">⚙ Gerenciar perfis financeiros</button>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <button class="nav-tab active" data-view="dashboard">Visão geral</button>
+        <button class="nav-tab" data-view="transactions">Lançamentos</button>
+        <button class="nav-tab" data-view="goals">Metas</button>
+        <button class="nav-tab" data-view="settings">Configurações</button>
+      </nav>
+    </section>
+
+    <main>
+      <section class="view active" id="view-dashboard">
+        <div class="notice-banner">
+          <div>
+            <strong id="bannerTitle">Seu mês financeiro em um só lugar.</strong>
+            <span id="bannerText">Acompanhe receitas, despesas e metas sem fórmulas.</span>
+          </div>
+          <button class="btn btn-light" id="btnReport">Gerar PDF</button>
+        </div>
+
+        <div class="filter-row">
+          <button class="icon-btn" id="prevPeriod">‹</button>
+          <select id="monthSelect"></select>
+          <select id="yearSelect"></select>
+          <button class="icon-btn" id="nextPeriod">›</button>
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-period="monthly">Mensal</button>
+            <button class="toggle-btn" data-period="annual">Anual</button>
+          </div>
+        </div>
+
+        <section class="kpi-grid">
+          <article class="kpi-card primary-card">
+            <div class="kpi-label">Saldo do período</div>
+            <div class="kpi-value" id="kpiBalance">R$ 0,00</div>
+            <div class="kpi-sub" id="kpiBalanceSub">Receitas − despesas</div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-label">Receitas <span class="status-icon green">＋</span></div>
+            <div class="kpi-value" id="kpiIncome">R$ 0,00</div>
+            <div class="kpi-sub" id="kpiIncomeSub">0 lançamentos</div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-label">Despesas <span class="status-icon red">−</span></div>
+            <div class="kpi-value" id="kpiExpense">R$ 0,00</div>
+            <div class="kpi-sub" id="kpiExpenseSub">0 lançamentos</div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-label">Resultado <span class="status-icon purple">↗</span></div>
+            <div class="kpi-value" id="kpiResult">R$ 0,00</div>
+            <div class="kpi-sub" id="kpiResultSub">0% de margem</div>
+          </article>
+          <article class="kpi-card">
+            <div class="kpi-label">Meta do mês <span class="status-icon orange">🎯</span></div>
+            <div class="kpi-value" id="kpiGoal">R$ 0,00</div>
+            <div class="kpi-sub" id="kpiGoalSub">Configure uma meta</div>
+          </article>
+        </section>
+
+        <section class="charts-grid">
+          <article class="panel chart-panel span-2">
+            <div class="panel-head">
+              <div>
+                <h3>Receitas × Despesas</h3>
+                <p>Evolução do período selecionado</p>
+              </div>
+              <div class="legend"><span><i class="dot income-dot"></i>Receitas</span><span><i class="dot expense-dot"></i>Despesas</span></div>
+            </div>
+            <canvas id="flowChart" height="250"></canvas>
+          </article>
+
+          <article class="panel chart-panel">
+            <div class="panel-head"><div><h3>Despesas por categoria</h3><p>Onde seu dinheiro está indo</p></div></div>
+            <canvas id="expenseDonut" height="250"></canvas>
+            <div class="mini-legend" id="expenseLegend"></div>
+          </article>
+
+          <article class="panel chart-panel span-2">
+            <div class="panel-head"><div><h3>Comparativo mensal</h3><p>Receitas, despesas e saldo por mês</p></div></div>
+            <canvas id="barChart" height="250"></canvas>
+          </article>
+
+          <article class="panel chart-panel">
+            <div class="panel-head"><div><h3>Entradas por categoria</h3><p>Origem das suas receitas</p></div></div>
+            <canvas id="incomeDonut" height="250"></canvas>
+            <div class="mini-legend" id="incomeLegend"></div>
+          </article>
+        </section>
+
+        <section class="lower-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div><h3>Metas em andamento</h3><p>Acompanhe seu progresso</p></div>
+              <button class="text-btn" data-go-to="goals">Ver metas</button>
+            </div>
+            <div id="goalPreview" class="goal-preview"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <div><h3>Últimos lançamentos</h3><p>Movimentações recentes</p></div>
+              <button class="text-btn" data-go-to="transactions">Ver todos</button>
+            </div>
+            <div id="recentTransactions"></div>
+          </article>
+        </section>
+      </section>
+
+      <section class="view" id="view-transactions">
+        <div class="page-head">
+          <div><h2>Lançamentos</h2><p>Cadastre, edite, filtre e organize todas as movimentações.</p></div>
+          <div class="page-actions"><button class="btn btn-ghost" id="btnExportCSV">Exportar CSV</button><button class="btn btn-primary" id="btnAdd2">+ Novo lançamento</button></div>
+        </div>
+        <div class="panel filters-panel">
+          <input type="search" id="txSearch" placeholder="Buscar por descrição..." />
+          <select id="txTypeFilter"><option value="all">Todos os tipos</option><option value="income">Receitas</option><option value="expense">Despesas</option></select>
+          <select id="txCategoryFilter"><option value="all">Todas as categorias</option></select>
+        </div>
+        <div class="panel table-panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Conta/Cartão</th><th>Valor</th><th></th></tr></thead>
+              <tbody id="transactionsBody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state hidden" id="transactionsEmpty"><div class="empty-icon">🧾</div><h3>Nenhum lançamento encontrado</h3><p>Adicione um lançamento ou importe um extrato.</p></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-goals">
+        <div class="page-head">
+          <div><h2>Metas financeiras</h2><p>Defina objetivos e acompanhe quanto falta para chegar lá.</p></div>
+          <button class="btn btn-primary" id="btnAddGoal">+ Nova meta</button>
+        </div>
+        <div class="goals-grid" id="goalsGrid"></div>
+        <div class="empty-state panel hidden" id="goalsEmpty"><div class="empty-icon">🎯</div><h3>Crie sua primeira meta</h3><p>Ex.: reserva de emergência, viagem, investimento ou compra.</p></div>
+      </section>
+
+      <section class="view" id="view-settings">
+        <div class="page-head"><div><h2>Configurações</h2><p>Personalize perfis, categorias, cartões, metas e dados.</p></div></div>
+        <div class="settings-grid">
+          <article class="panel settings-card">
+            <h3>Perfis financeiros</h3><p>Separe vida pessoal, negócio ou qualquer outro contexto.</p>
+            <div id="settingsProfiles"></div>
+            <button class="btn btn-ghost full" id="btnAddProfileSettings">+ Adicionar perfil</button>
+          </article>
+          <article class="panel settings-card">
+            <h3>Categorias</h3><p>Crie suas próprias categorias de receita e despesa.</p>
+            <div id="settingsCategories" class="settings-list"></div>
+            <button class="btn btn-ghost full" id="btnAddCategory">+ Nova categoria</button>
+          </article>
+          <article class="panel settings-card">
+            <h3>Cartões e contas</h3><p>Use para identificar a origem ou forma de pagamento.</p>
+            <div id="settingsAccounts" class="settings-list"></div>
+            <button class="btn btn-ghost full" id="btnAddAccount">+ Nova conta/cartão</button>
+          </article>
+          <article class="panel settings-card">
+            <h3>Meta mensal</h3><p>Defina uma meta de saldo positivo para o perfil atual.</p>
+            <label class="field-label">Meta de resultado mensal</label>
+            <input id="monthlyGoalInput" type="number" step="0.01" min="0" placeholder="5000" />
+            <button class="btn btn-primary full" id="btnSaveMonthlyGoal">Salvar meta</button>
+          </article>
+          <article class="panel settings-card">
+            <h3>Backup dos dados</h3><p>Exporte tudo em JSON e restaure quando quiser.</p>
+            <div class="stack-actions">
+              <button class="btn btn-ghost full" id="btnBackup">Baixar backup JSON</button>
+              <label class="btn btn-ghost full file-label">Restaurar backup<input type="file" id="backupFile" accept="application/json" hidden /></label>
+            </div>
+          </article>
+          <article class="panel settings-card">
+            <h3>Dados de exemplo</h3><p>Carregue uma demonstração para visualizar os gráficos. Você pode apagar depois.</p>
+            <button class="btn btn-ghost full" id="btnDemo">Carregar demonstração</button>
+            <button class="btn btn-danger-outline full" id="btnClearProfile">Limpar dados do perfil atual</button>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <button class="floating-add" id="floatingAdd" aria-label="Novo lançamento">＋</button>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop"></div>
+
+  <div class="modal hidden" id="transactionModal">
+    <div class="modal-head"><h3 id="transactionModalTitle">Novo lançamento</h3><button class="modal-close" data-close="transactionModal">×</button></div>
+    <form id="transactionForm" class="form-grid">
+      <input type="hidden" id="txId" />
+      <label><span>Data</span><input id="txDate" type="date" required /></label>
+      <label class="span-2"><span>Descrição</span><input id="txDescription" type="text" maxlength="100" required placeholder="Ex.: Mercado, salário, gasolina..." /></label>
+      <label><span>Tipo</span><select id="txType" required><option value="expense">Despesa</option><option value="income">Receita</option></select></label>
+      <label><span>Categoria</span><select id="txCategory" required></select></label>
+      <label><span>Conta/Cartão</span><select id="txAccount"></select></label>
+      <label><span>Valor (R$)</span><input id="txAmount" type="number" min="0.01" step="0.01" required placeholder="0,00" /></label>
+      <label class="span-2"><span>Observação (opcional)</span><textarea id="txNote" rows="3" placeholder="Detalhes adicionais"></textarea></label>
+      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="transactionModal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar lançamento</button></div>
+    </form>
+  </div>
+
+  <div class="modal modal-wide hidden" id="importModal">
+    <div class="modal-head"><div><h3>Importar extrato ou fatura</h3><p class="modal-sub">Compatível com CSV, OFX/QFX e backup JSON de lançamentos.</p></div><button class="modal-close" data-close="importModal">×</button></div>
+    <div id="importStep1">
+      <label class="dropzone" id="dropzone">
+        <div class="drop-icon">⬆</div>
+        <strong>Escolha o arquivo do seu banco/cartão</strong>
+        <span>CSV, OFX, QFX ou JSON</span>
+        <input type="file" id="importFile" accept=".csv,.ofx,.qfx,.json,text/csv,application/json" hidden />
+      </label>
+      <div class="import-tip"><strong>Dica:</strong> exporte o extrato pelo app do seu banco em CSV ou OFX. O sistema identifica data, descrição e valor automaticamente.</div>
+    </div>
+    <div id="importStep2" class="hidden">
+      <div class="bulk-toolbar">
+        <div><strong id="importCount">0 lançamentos encontrados</strong><p>Revise o tipo e a categoria antes de importar.</p></div>
+        <div><button class="btn btn-ghost" id="markAll">Marcar todos</button><button class="btn btn-ghost" id="unmarkAll">Desmarcar</button></div>
+      </div>
+      <div class="table-wrap import-table-wrap">
+        <table><thead><tr><th>✓</th><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th></tr></thead><tbody id="importBody"></tbody></table>
+      </div>
+      <div class="modal-actions"><button class="btn btn-ghost" id="backImport">Voltar</button><button class="btn btn-primary" id="confirmImport">Importar selecionados</button></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="profileModal">
+    <div class="modal-head"><h3 id="profileModalTitle">Novo perfil financeiro</h3><button class="modal-close" data-close="profileModal">×</button></div>
+    <form id="profileForm" class="form-grid">
+      <input type="hidden" id="profileId" />
+      <label class="span-2"><span>Nome do perfil</span><input id="profileInput" required maxlength="30" placeholder="Ex.: Profissional" /></label>
+      <label><span>Ícone</span><select id="profileIconInput"><option>⭐</option><option>🏢</option><option>💼</option><option>🏠</option><option>🚀</option><option>💰</option></select></label>
+      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="profileModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar perfil</button></div>
+    </form>
+  </div>
+
+  <div class="modal hidden" id="categoryModal">
+    <div class="modal-head"><h3>Nova categoria</h3><button class="modal-close" data-close="categoryModal">×</button></div>
+    <form id="categoryForm" class="form-grid">
+      <label class="span-2"><span>Nome</span><input id="categoryName" required maxlength="30" placeholder="Ex.: Alimentação" /></label>
+      <label><span>Tipo</span><select id="categoryType"><option value="expense">Despesa</option><option value="income">Receita</option></select></label>
+      <label><span>Cor</span><input id="categoryColor" type="color" value="#6f5cf5" /></label>
+      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="categoryModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar categoria</button></div>
+    </form>
+  </div>
+
+  <div class="modal hidden" id="accountModal">
+    <div class="modal-head"><h3>Nova conta/cartão</h3><button class="modal-close" data-close="accountModal">×</button></div>
+    <form id="accountForm" class="form-grid">
+      <label class="span-2"><span>Nome</span><input id="accountName" required maxlength="30" placeholder="Ex.: Nubank" /></label>
+      <label><span>Tipo</span><select id="accountType"><option value="account">Conta</option><option value="card">Cartão</option><option value="cash">Dinheiro</option></select></label>
+      <label><span>Limite (opcional)</span><input id="accountLimit" type="number" min="0" step="0.01" /></label>
+      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="accountModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar</button></div>
+    </form>
+  </div>
+
+  <div class="modal hidden" id="goalModal">
+    <div class="modal-head"><h3>Nova meta financeira</h3><button class="modal-close" data-close="goalModal">×</button></div>
+    <form id="goalForm" class="form-grid">
+      <label class="span-2"><span>Nome da meta</span><input id="goalName" required maxlength="40" placeholder="Ex.: Reserva de emergência" /></label>
+      <label><span>Valor-alvo (R$)</span><input id="goalTarget" type="number" required min="1" step="0.01" /></label>
+      <label><span>Valor já acumulado (R$)</span><input id="goalCurrent" type="number" min="0" step="0.01" value="0" /></label>
+      <label><span>Prazo</span><input id="goalDeadline" type="date" /></label>
+      <label><span>Ícone</span><select id="goalIcon"><option>🎯</option><option>🏠</option><option>🚗</option><option>✈️</option><option>💰</option><option>📈</option></select></label>
+      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="goalModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar meta</button></div>
+    </form>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="app.js"></script>
+</body>
+</html>
