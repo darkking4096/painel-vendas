@@ -1,303 +1,598 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#6f5cf5" />
-  <title>Meu Dashboard Financeiro</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1113">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Painel de Vendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E1113; --card:#171B1E; --card2:#1E2427; --border:#262C30; --border2:#333B40;
+  --tx:#ECEFF1; --tx2:#9AA4AA; --tx3:#5F6A70;
+  --amber:#FFB020; --red:#E4572E; --blue:#58A6FF; --purple:#B18CFF; --teal:#2FD6A7; --green:#4CD964; --gray:#8B959B;
+  --disp:'Saira Condensed',system-ui,sans-serif;
+}
+*{box-sizing:border-box; margin:0; -webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{background:var(--bg); color:var(--tx); font-family:'Inter',system-ui,-apple-system,sans-serif; min-height:100vh; padding-bottom:76px}
+button{font-family:inherit; cursor:pointer}
+input,select,textarea{font-family:inherit; font-size:16px; background:var(--card2); color:var(--tx); border:1px solid var(--border2); border-radius:10px; padding:11px 12px; width:100%; outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--amber)}
+textarea{resize:vertical; min-height:70px}
+select{appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%239AA4AA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat:no-repeat; background-position:right 12px center; padding-right:34px}
+.iconbtn,.chip,.card,.btn,select,input,textarea,.tabs button{transition:background .15s, border-color .15s, color .15s}
+@media(hover:hover){
+  .iconbtn:hover,.chip:hover{border-color:var(--border2); color:var(--tx)}
+  .chip.on:hover{border-color:var(--amber); color:#1A1204}
+  .card:hover{border-color:var(--border2); background:var(--card2)}
+  .btn.save:hover{filter:brightness(1.07)}
+  .fab:hover{filter:brightness(1.07)}
+  .tabs button:hover{color:var(--tx)}
+  .tabs button.on:hover{color:#1A1204}
+}
+label{display:block; font-size:12.5px; color:var(--tx2); margin:14px 0 5px; font-weight:500}
+label .req{color:var(--amber)}
+.wrap{max-width:1100px; margin:0 auto; padding:14px 14px 0}
+header.top{display:flex; align-items:center; justify-content:space-between; padding:4px 2px 12px}
+header.top h1{font-family:var(--disp); font-size:22px; font-weight:600; letter-spacing:.06em; text-transform:uppercase}
+header.top h1 span{color:var(--amber)}
+.iconbtn{background:var(--card); border:1px solid var(--border); color:var(--tx2); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:500}
+.iconbtn:active{transform:scale(.97)}
+.metrics{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+.metric{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px 14px; position:relative}
+.metric .lb{font-size:12px; color:var(--tx2); font-weight:500}
+.metric .num{font-family:var(--disp); font-size:34px; font-weight:600; line-height:1.15}
+.metric.sale{border-color:rgba(76,217,100,.45); grid-column:1/-1}
+.metric.sale .num{color:var(--green)}
+.metric .plus{position:absolute; top:10px; right:10px; width:30px; height:30px; border-radius:8px; background:var(--card2); border:1px solid var(--border2); color:var(--amber); font-size:18px; line-height:1}
+.metric .minus{position:absolute; top:10px; right:46px; width:30px; height:30px; border-radius:8px; background:var(--card2); border:1px solid var(--border2); color:var(--tx3); font-size:18px; line-height:1}
+.chips{display:flex; gap:8px; margin:14px 0 10px; flex-wrap:wrap}
+.chip{background:var(--card); border:1px solid var(--border); color:var(--tx2); border-radius:999px; padding:7px 14px; font-size:13px; font-weight:500}
+.chip.on{background:var(--amber); border-color:var(--amber); color:#1A1204}
+.dashsel{width:auto; padding:7px 30px 7px 12px; font-size:13px; border-radius:999px; background:var(--card)}
+.clock{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-top:14px}
+.clock .time{font-family:var(--disp); font-size:44px; font-weight:600; letter-spacing:.04em; line-height:1; color:var(--amber)}
+.clock .date{font-size:13px; color:var(--tx2); margin-top:3px; text-transform:capitalize}
+.agh{font-size:12.5px; color:var(--tx2); font-weight:500; margin:16px 0 8px; text-transform:uppercase; letter-spacing:.08em}
+.ag{display:flex; gap:10px; align-items:flex-start; background:var(--card2); border:1px solid var(--border2); border-radius:10px; padding:9px 11px; margin-bottom:7px}
+.ag.now{border-color:var(--amber)}
+.ag .when{font-family:var(--disp); font-size:17px; font-weight:600; color:var(--amber); min-width:52px; line-height:1.2}
+.ag .when small{display:block; font-family:'Inter'; font-size:10.5px; color:var(--tx3); font-weight:500}
+.ag .who{font-size:14px; font-weight:500}
+.ag .what{font-size:12.5px; color:var(--tx2); margin-top:1px}
+.empty{color:var(--tx3); font-size:13.5px; padding:22px 8px; text-align:center; grid-column:1/-1}
+.searchrow{display:flex; gap:8px; margin-bottom:10px}
+.filtros{display:flex; gap:8px; margin-bottom:12px}
+.filtros select{padding:9px 28px 9px 10px; font-size:13.5px}
+.card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:13px 14px; margin-bottom:10px; cursor:pointer}
+.card:active{background:var(--card2)}
+.card .nm{font-size:15.5px; font-weight:600}
+.card .ph{font-size:13.5px; color:var(--tx2); margin:2px 0 8px}
+.card .meta{font-size:12.5px; color:var(--tx3); margin-top:6px}
+.pill{display:inline-block; font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px}
+.fab{position:fixed; right:18px; bottom:86px; width:56px; height:56px; border-radius:50%; background:var(--amber); color:#1A1204; font-size:30px; border:none; box-shadow:0 4px 16px rgba(0,0,0,.5); z-index:20}
+.tabs{position:fixed; left:0; right:0; bottom:0; background:var(--card); border-top:1px solid var(--border); display:flex; z-index:30; padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1; background:none; border:none; color:var(--tx3); font-size:12px; font-weight:600; padding:10px 0 12px}
+.tabs button.on{color:var(--amber)}
+.tabs .tico{display:block; width:20px; height:20px; margin:0 auto 3px}
+.tabs .tico svg{display:block; width:100%; height:100%}
+.overlay{position:fixed; inset:0; background:var(--bg); z-index:40; overflow-y:auto; display:none}
+.overlay.show{display:block}
+.overlay .inner{max-width:640px; margin:0 auto; padding:16px 16px 40px}
+.ovhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px}
+.ovhead h2{font-family:var(--disp); font-size:20px; font-weight:600; text-transform:uppercase; letter-spacing:.05em}
+.condbox{background:var(--card); border:1px solid var(--amber); border-radius:12px; padding:4px 14px 14px; margin-top:14px}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.btn{width:100%; border:none; border-radius:12px; padding:14px; font-size:15.5px; font-weight:600; margin-top:18px}
+.btn.save{background:var(--amber); color:#1A1204}
+.btn.del{background:none; border:1px solid var(--red); color:var(--red); margin-top:10px}
+.btn.ghost{background:var(--card2); color:var(--tx2); border:1px solid var(--border2); margin-top:10px}
+.msg{position:fixed; left:50%; transform:translateX(-50%); bottom:100px; background:var(--tx); color:var(--bg); font-size:14px; font-weight:600; padding:10px 18px; border-radius:999px; z-index:60; opacity:0; transition:opacity .25s; pointer-events:none; max-width:88vw; text-align:center}
+.msg.show{opacity:1}
+.importres{font-size:13.5px; margin-top:10px; line-height:1.5; color:var(--tx2); white-space:pre-wrap}
+@media(min-width:760px){
+  body{padding-bottom:32px}
+  .metrics{grid-template-columns:repeat(4,1fr)}
+  .metric.sale{grid-column:auto}
+  .tabs{position:static; background:none; border:none; justify-content:flex-start; gap:8px; margin:2px 0 18px; padding:0}
+  .tabs button{flex:none; padding:9px 20px; background:var(--card); border:1px solid var(--border); border-radius:999px; font-size:13.5px}
+  .tabs button.on{background:var(--amber); border-color:var(--amber); color:#1A1204}
+  .tabs .tico{display:none}
+  .fab{bottom:28px; right:28px}
+  #listaClientes{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px}
+  #listaClientes .card{margin-bottom:0}
+  .dgrid{display:grid; grid-template-columns:1fr 360px; gap:16px; align-items:start}
+  .searchrow{max-width:640px}
+  .filtros{max-width:640px}
+  .overlay{background:rgba(8,10,11,.74)}
+  .overlay .inner{background:var(--card); border:1px solid var(--border); border-radius:18px; margin:48px auto; padding:26px 28px 30px}
+}
+</style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-icon">$</div>
-        <div>
-          <h1>Meu Dashboard Financeiro</h1>
-          <p id="greeting">Controle simples, visual e completo</p>
-        </div>
-      </div>
-      <div class="top-actions">
-        <button class="btn btn-ghost" id="btnImport">⬆ Importar extrato</button>
-        <button class="btn btn-primary" id="btnAdd">+ Novo lançamento</button>
-      </div>
-    </header>
 
-    <section class="profile-row">
-      <div class="profile-select-wrap">
-        <button class="profile-button" id="profileButton">
-          <span id="profileIcon">⭐</span>
-          <span id="profileName">Pessoal</span>
-          <span class="chevron">▾</span>
-        </button>
-        <span class="save-status" id="saveStatus">● Salvo</span>
-        <div class="profile-menu hidden" id="profileMenu">
-          <div id="profileList"></div>
-          <button class="profile-menu-action" id="btnNewProfile">＋ Novo perfil financeiro</button>
-          <button class="profile-menu-action" id="btnManageProfiles">⚙ Gerenciar perfis financeiros</button>
-        </div>
-      </div>
-      <nav class="main-nav">
-        <button class="nav-tab active" data-view="dashboard">Visão geral</button>
-        <button class="nav-tab" data-view="transactions">Lançamentos</button>
-        <button class="nav-tab" data-view="goals">Metas</button>
-        <button class="nav-tab" data-view="settings">Configurações</button>
-      </nav>
-    </section>
-
-    <main>
-      <section class="view active" id="view-dashboard">
-        <div class="notice-banner">
-          <div>
-            <strong id="bannerTitle">Seu mês financeiro em um só lugar.</strong>
-            <span id="bannerText">Acompanhe receitas, despesas e metas sem fórmulas.</span>
-          </div>
-          <button class="btn btn-light" id="btnReport">Gerar PDF</button>
-        </div>
-
-        <div class="filter-row">
-          <button class="icon-btn" id="prevPeriod">‹</button>
-          <select id="monthSelect"></select>
-          <select id="yearSelect"></select>
-          <button class="icon-btn" id="nextPeriod">›</button>
-          <div class="view-toggle">
-            <button class="toggle-btn active" data-period="monthly">Mensal</button>
-            <button class="toggle-btn" data-period="annual">Anual</button>
-          </div>
-        </div>
-
-        <section class="kpi-grid">
-          <article class="kpi-card primary-card">
-            <div class="kpi-label">Saldo do período</div>
-            <div class="kpi-value" id="kpiBalance">R$ 0,00</div>
-            <div class="kpi-sub" id="kpiBalanceSub">Receitas − despesas</div>
-          </article>
-          <article class="kpi-card">
-            <div class="kpi-label">Receitas <span class="status-icon green">＋</span></div>
-            <div class="kpi-value" id="kpiIncome">R$ 0,00</div>
-            <div class="kpi-sub" id="kpiIncomeSub">0 lançamentos</div>
-          </article>
-          <article class="kpi-card">
-            <div class="kpi-label">Despesas <span class="status-icon red">−</span></div>
-            <div class="kpi-value" id="kpiExpense">R$ 0,00</div>
-            <div class="kpi-sub" id="kpiExpenseSub">0 lançamentos</div>
-          </article>
-          <article class="kpi-card">
-            <div class="kpi-label">Resultado <span class="status-icon purple">↗</span></div>
-            <div class="kpi-value" id="kpiResult">R$ 0,00</div>
-            <div class="kpi-sub" id="kpiResultSub">0% de margem</div>
-          </article>
-          <article class="kpi-card">
-            <div class="kpi-label">Meta do mês <span class="status-icon orange">🎯</span></div>
-            <div class="kpi-value" id="kpiGoal">R$ 0,00</div>
-            <div class="kpi-sub" id="kpiGoalSub">Configure uma meta</div>
-          </article>
-        </section>
-
-        <section class="charts-grid">
-          <article class="panel chart-panel span-2">
-            <div class="panel-head">
-              <div>
-                <h3>Receitas × Despesas</h3>
-                <p>Evolução do período selecionado</p>
-              </div>
-              <div class="legend"><span><i class="dot income-dot"></i>Receitas</span><span><i class="dot expense-dot"></i>Despesas</span></div>
-            </div>
-            <canvas id="flowChart" height="250"></canvas>
-          </article>
-
-          <article class="panel chart-panel">
-            <div class="panel-head"><div><h3>Despesas por categoria</h3><p>Onde seu dinheiro está indo</p></div></div>
-            <canvas id="expenseDonut" height="250"></canvas>
-            <div class="mini-legend" id="expenseLegend"></div>
-          </article>
-
-          <article class="panel chart-panel span-2">
-            <div class="panel-head"><div><h3>Comparativo mensal</h3><p>Receitas, despesas e saldo por mês</p></div></div>
-            <canvas id="barChart" height="250"></canvas>
-          </article>
-
-          <article class="panel chart-panel">
-            <div class="panel-head"><div><h3>Entradas por categoria</h3><p>Origem das suas receitas</p></div></div>
-            <canvas id="incomeDonut" height="250"></canvas>
-            <div class="mini-legend" id="incomeLegend"></div>
-          </article>
-        </section>
-
-        <section class="lower-grid">
-          <article class="panel">
-            <div class="panel-head">
-              <div><h3>Metas em andamento</h3><p>Acompanhe seu progresso</p></div>
-              <button class="text-btn" data-go-to="goals">Ver metas</button>
-            </div>
-            <div id="goalPreview" class="goal-preview"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head">
-              <div><h3>Últimos lançamentos</h3><p>Movimentações recentes</p></div>
-              <button class="text-btn" data-go-to="transactions">Ver todos</button>
-            </div>
-            <div id="recentTransactions"></div>
-          </article>
-        </section>
-      </section>
-
-      <section class="view" id="view-transactions">
-        <div class="page-head">
-          <div><h2>Lançamentos</h2><p>Cadastre, edite, filtre e organize todas as movimentações.</p></div>
-          <div class="page-actions"><button class="btn btn-ghost" id="btnExportCSV">Exportar CSV</button><button class="btn btn-primary" id="btnAdd2">+ Novo lançamento</button></div>
-        </div>
-        <div class="panel filters-panel">
-          <input type="search" id="txSearch" placeholder="Buscar por descrição..." />
-          <select id="txTypeFilter"><option value="all">Todos os tipos</option><option value="income">Receitas</option><option value="expense">Despesas</option></select>
-          <select id="txCategoryFilter"><option value="all">Todas as categorias</option></select>
-        </div>
-        <div class="panel table-panel">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Conta/Cartão</th><th>Valor</th><th></th></tr></thead>
-              <tbody id="transactionsBody"></tbody>
-            </table>
-          </div>
-          <div class="empty-state hidden" id="transactionsEmpty"><div class="empty-icon">🧾</div><h3>Nenhum lançamento encontrado</h3><p>Adicione um lançamento ou importe um extrato.</p></div>
-        </div>
-      </section>
-
-      <section class="view" id="view-goals">
-        <div class="page-head">
-          <div><h2>Metas financeiras</h2><p>Defina objetivos e acompanhe quanto falta para chegar lá.</p></div>
-          <button class="btn btn-primary" id="btnAddGoal">+ Nova meta</button>
-        </div>
-        <div class="goals-grid" id="goalsGrid"></div>
-        <div class="empty-state panel hidden" id="goalsEmpty"><div class="empty-icon">🎯</div><h3>Crie sua primeira meta</h3><p>Ex.: reserva de emergência, viagem, investimento ou compra.</p></div>
-      </section>
-
-      <section class="view" id="view-settings">
-        <div class="page-head"><div><h2>Configurações</h2><p>Personalize perfis, categorias, cartões, metas e dados.</p></div></div>
-        <div class="settings-grid">
-          <article class="panel settings-card">
-            <h3>Perfis financeiros</h3><p>Separe vida pessoal, negócio ou qualquer outro contexto.</p>
-            <div id="settingsProfiles"></div>
-            <button class="btn btn-ghost full" id="btnAddProfileSettings">+ Adicionar perfil</button>
-          </article>
-          <article class="panel settings-card">
-            <h3>Categorias</h3><p>Crie suas próprias categorias de receita e despesa.</p>
-            <div id="settingsCategories" class="settings-list"></div>
-            <button class="btn btn-ghost full" id="btnAddCategory">+ Nova categoria</button>
-          </article>
-          <article class="panel settings-card">
-            <h3>Cartões e contas</h3><p>Use para identificar a origem ou forma de pagamento.</p>
-            <div id="settingsAccounts" class="settings-list"></div>
-            <button class="btn btn-ghost full" id="btnAddAccount">+ Nova conta/cartão</button>
-          </article>
-          <article class="panel settings-card">
-            <h3>Meta mensal</h3><p>Defina uma meta de saldo positivo para o perfil atual.</p>
-            <label class="field-label">Meta de resultado mensal</label>
-            <input id="monthlyGoalInput" type="number" step="0.01" min="0" placeholder="5000" />
-            <button class="btn btn-primary full" id="btnSaveMonthlyGoal">Salvar meta</button>
-          </article>
-          <article class="panel settings-card">
-            <h3>Backup dos dados</h3><p>Exporte tudo em JSON e restaure quando quiser.</p>
-            <div class="stack-actions">
-              <button class="btn btn-ghost full" id="btnBackup">Baixar backup JSON</button>
-              <label class="btn btn-ghost full file-label">Restaurar backup<input type="file" id="backupFile" accept="application/json" hidden /></label>
-            </div>
-          </article>
-          <article class="panel settings-card">
-            <h3>Dados de exemplo</h3><p>Carregue uma demonstração para visualizar os gráficos. Você pode apagar depois.</p>
-            <button class="btn btn-ghost full" id="btnDemo">Carregar demonstração</button>
-            <button class="btn btn-danger-outline full" id="btnClearProfile">Limpar dados do perfil atual</button>
-          </article>
-        </div>
-      </section>
-    </main>
-
-    <button class="floating-add" id="floatingAdd" aria-label="Novo lançamento">＋</button>
-  </div>
-
-  <div class="modal-backdrop hidden" id="modalBackdrop"></div>
-
-  <div class="modal hidden" id="transactionModal">
-    <div class="modal-head"><h3 id="transactionModalTitle">Novo lançamento</h3><button class="modal-close" data-close="transactionModal">×</button></div>
-    <form id="transactionForm" class="form-grid">
-      <input type="hidden" id="txId" />
-      <label><span>Data</span><input id="txDate" type="date" required /></label>
-      <label class="span-2"><span>Descrição</span><input id="txDescription" type="text" maxlength="100" required placeholder="Ex.: Mercado, salário, gasolina..." /></label>
-      <label><span>Tipo</span><select id="txType" required><option value="expense">Despesa</option><option value="income">Receita</option></select></label>
-      <label><span>Categoria</span><select id="txCategory" required></select></label>
-      <label><span>Conta/Cartão</span><select id="txAccount"></select></label>
-      <label><span>Valor (R$)</span><input id="txAmount" type="number" min="0.01" step="0.01" required placeholder="0,00" /></label>
-      <label class="span-2"><span>Observação (opcional)</span><textarea id="txNote" rows="3" placeholder="Detalhes adicionais"></textarea></label>
-      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="transactionModal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar lançamento</button></div>
-    </form>
-  </div>
-
-  <div class="modal modal-wide hidden" id="importModal">
-    <div class="modal-head"><div><h3>Importar extrato ou fatura</h3><p class="modal-sub">Compatível com CSV, OFX/QFX e backup JSON de lançamentos.</p></div><button class="modal-close" data-close="importModal">×</button></div>
-    <div id="importStep1">
-      <label class="dropzone" id="dropzone">
-        <div class="drop-icon">⬆</div>
-        <strong>Escolha o arquivo do seu banco/cartão</strong>
-        <span>CSV, OFX, QFX ou JSON</span>
-        <input type="file" id="importFile" accept=".csv,.ofx,.qfx,.json,text/csv,application/json" hidden />
-      </label>
-      <div class="import-tip"><strong>Dica:</strong> exporte o extrato pelo app do seu banco em CSV ou OFX. O sistema identifica data, descrição e valor automaticamente.</div>
+<div class="wrap">
+  <header class="top">
+    <h1>Painel <span>de vendas</span></h1>
+    <div style="display:flex; gap:8px">
+      <button class="iconbtn" onclick="document.getElementById('fileRestore').click()">Restaurar</button>
+      <button class="iconbtn" onclick="exportarBackup()">Backup</button>
+      <input type="file" id="fileRestore" accept=".json,application/json" style="display:none" onchange="restaurarBackup(event)">
     </div>
-    <div id="importStep2" class="hidden">
-      <div class="bulk-toolbar">
-        <div><strong id="importCount">0 lançamentos encontrados</strong><p>Revise o tipo e a categoria antes de importar.</p></div>
-        <div><button class="btn btn-ghost" id="markAll">Marcar todos</button><button class="btn btn-ghost" id="unmarkAll">Desmarcar</button></div>
+  </header>
+
+  <nav class="tabs" id="tabbar">
+    <button id="tabDash" class="on" onclick="trocaTab('dash')"><span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19a9 9 0 1 1 14 0"/><path d="M12 14l4-5"/></svg></span>Painel</button>
+    <button id="tabCli" onclick="trocaTab('cli')"><span class="tico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M15.5 6.6a2.6 2.6 0 1 1 1.8 4.7"/><path d="M16.5 14.4c2.6.5 4.5 2.8 4.5 5.6"/></svg></span>Clientes</button>
+  </nav>
+
+  <section id="telaDash">
+    <div class="chips" id="periodChips"></div>
+    <div style="margin:0 0 12px"><select class="dashsel" id="dashCat" onchange="renderDash()"></select></div>
+    <div class="dgrid">
+      <div>
+        <div class="metrics" id="metrics"></div>
       </div>
-      <div class="table-wrap import-table-wrap">
-        <table><thead><tr><th>✓</th><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th></tr></thead><tbody id="importBody"></tbody></table>
+      <div>
+        <div class="clock">
+          <div class="time" id="clkTime">--:--:--</div>
+          <div class="date" id="clkDate"></div>
+          <div class="agh">Próximos compromissos</div>
+          <div id="agenda"></div>
+        </div>
       </div>
-      <div class="modal-actions"><button class="btn btn-ghost" id="backImport">Voltar</button><button class="btn btn-primary" id="confirmImport">Importar selecionados</button></div>
     </div>
-  </div>
+  </section>
 
-  <div class="modal hidden" id="profileModal">
-    <div class="modal-head"><h3 id="profileModalTitle">Novo perfil financeiro</h3><button class="modal-close" data-close="profileModal">×</button></div>
-    <form id="profileForm" class="form-grid">
-      <input type="hidden" id="profileId" />
-      <label class="span-2"><span>Nome do perfil</span><input id="profileInput" required maxlength="30" placeholder="Ex.: Profissional" /></label>
-      <label><span>Ícone</span><select id="profileIconInput"><option>⭐</option><option>🏢</option><option>💼</option><option>🏠</option><option>🚀</option><option>💰</option></select></label>
-      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="profileModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar perfil</button></div>
-    </form>
-  </div>
+  <section id="telaClientes" style="display:none">
+    <div class="searchrow">
+      <input id="busca" placeholder="Buscar nome, número ou carro" oninput="renderList()">
+      <button class="iconbtn" style="white-space:nowrap" onclick="abrirImport()">Importar JSON</button>
+    </div>
+    <div class="filtros">
+      <select id="fCat" onchange="renderList()"></select>
+      <select id="fOrd" onchange="renderList()">
+        <option value="rec">Mais recentes</option>
+        <option value="az">Nome A–Z</option>
+        <option value="contato">Data de contato</option>
+      </select>
+    </div>
+    <div id="listaClientes"></div>
+  </section>
+</div>
 
-  <div class="modal hidden" id="categoryModal">
-    <div class="modal-head"><h3>Nova categoria</h3><button class="modal-close" data-close="categoryModal">×</button></div>
-    <form id="categoryForm" class="form-grid">
-      <label class="span-2"><span>Nome</span><input id="categoryName" required maxlength="30" placeholder="Ex.: Alimentação" /></label>
-      <label><span>Tipo</span><select id="categoryType"><option value="expense">Despesa</option><option value="income">Receita</option></select></label>
-      <label><span>Cor</span><input id="categoryColor" type="color" value="#6f5cf5" /></label>
-      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="categoryModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar categoria</button></div>
-    </form>
-  </div>
+<button class="fab" id="fab" style="display:none" onclick="abrirFicha()">+</button>
 
-  <div class="modal hidden" id="accountModal">
-    <div class="modal-head"><h3>Nova conta/cartão</h3><button class="modal-close" data-close="accountModal">×</button></div>
-    <form id="accountForm" class="form-grid">
-      <label class="span-2"><span>Nome</span><input id="accountName" required maxlength="30" placeholder="Ex.: Nubank" /></label>
-      <label><span>Tipo</span><select id="accountType"><option value="account">Conta</option><option value="card">Cartão</option><option value="cash">Dinheiro</option></select></label>
-      <label><span>Limite (opcional)</span><input id="accountLimit" type="number" min="0" step="0.01" /></label>
-      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="accountModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar</button></div>
-    </form>
+<div class="overlay" id="ovFicha">
+  <div class="inner">
+    <div class="ovhead">
+      <h2 id="fichaTitulo">Novo cliente</h2>
+      <button class="iconbtn" onclick="fecharFicha()">Fechar</button>
+    </div>
+    <label>Número (WhatsApp) <span class="req">*</span></label>
+    <input id="cNumero" inputmode="tel" placeholder="31 9 9999-0000">
+    <label>Nome</label>
+    <input id="cNome" placeholder="Nome do cliente">
+    <div class="row2">
+      <div>
+        <label>Carro almejado</label>
+        <input id="cCarro" placeholder="Ex.: Onix 2020">
+      </div>
+      <div>
+        <label>Valor estimado (R$)</label>
+        <input id="cValor" inputmode="numeric" placeholder="55000">
+      </div>
+    </div>
+    <label>Categoria <span class="req">*</span></label>
+    <select id="cCat" onchange="atualizaCond()"></select>
+    <div class="condbox" id="condBox" style="display:none">
+      <div id="condTexto" style="display:none">
+        <label id="condTextoLb">Situação <span class="req">*</span></label>
+        <textarea id="cDetalhe"></textarea>
+      </div>
+      <div id="condData" style="display:none">
+        <div class="row2">
+          <div><label>Data <span class="req">*</span></label><input type="date" id="cData"></div>
+          <div><label>Hora</label><input type="time" id="cHora"></div>
+        </div>
+        <div style="font-size:12px; color:var(--tx2); margin-top:8px">Cliente ainda não definiu a hora? Deixe vazia: o compromisso aparece às 07:00 do dia pra você confirmar o horário com ele.</div>
+      </div>
+    </div>
+    <label>Observação</label>
+    <textarea id="cObs" placeholder="Anotação livre"></textarea>
+    <label>Lembrete (motivo)</label>
+    <input id="cLembrete" placeholder="Ex.: mandar mensagem sobre a proposta">
+    <div class="row2">
+      <div><label>Data do lembrete</label><input type="date" id="cLemData"></div>
+      <div><label>Hora do lembrete</label><input type="time" id="cLemHora"></div>
+    </div>
+    <button class="btn save" onclick="salvarFicha()">Salvar</button>
+    <button class="btn del" id="btnExcluir" style="display:none" onclick="excluirCliente()">Excluir cliente</button>
+    <button class="btn ghost" onclick="fecharFicha()">Cancelar</button>
   </div>
+</div>
 
-  <div class="modal hidden" id="goalModal">
-    <div class="modal-head"><h3>Nova meta financeira</h3><button class="modal-close" data-close="goalModal">×</button></div>
-    <form id="goalForm" class="form-grid">
-      <label class="span-2"><span>Nome da meta</span><input id="goalName" required maxlength="40" placeholder="Ex.: Reserva de emergência" /></label>
-      <label><span>Valor-alvo (R$)</span><input id="goalTarget" type="number" required min="1" step="0.01" /></label>
-      <label><span>Valor já acumulado (R$)</span><input id="goalCurrent" type="number" min="0" step="0.01" value="0" /></label>
-      <label><span>Prazo</span><input id="goalDeadline" type="date" /></label>
-      <label><span>Ícone</span><select id="goalIcon"><option>🎯</option><option>🏠</option><option>🚗</option><option>✈️</option><option>💰</option><option>📈</option></select></label>
-      <div class="modal-actions span-2"><button type="button" class="btn btn-ghost" data-close="goalModal">Cancelar</button><button class="btn btn-primary" type="submit">Salvar meta</button></div>
-    </form>
+<div class="overlay" id="ovImport">
+  <div class="inner">
+    <div class="ovhead">
+      <h2>Importar JSON</h2>
+      <button class="iconbtn" onclick="fecharImport()">Fechar</button>
+    </div>
+    <label>Cole aqui o JSON gerado pela IA</label>
+    <textarea id="jsonIn" style="min-height:180px" placeholder='[ { "numero": "...", "categoria": "..." } ]'></textarea>
+    <button class="btn save" onclick="importarJSON()">Importar</button>
+    <div class="importres" id="importRes"></div>
   </div>
+</div>
 
-  <div class="toast-container" id="toastContainer"></div>
-  <script src="app.js"></script>
+<div class="msg" id="toast"></div>
+
+<script>
+var CATS = {
+  sem_retorno:        {lb:'Sem retorno',            cor:'gray',   extra:null},
+  desinteressado:     {lb:'Desinteressado',         cor:'red',    extra:'t',  q:'Por que não tem interesse?'},
+  quer_a_vista:       {lb:'Quer à vista',           cor:'amber',  extra:'t',  q:'Quanto ele tem? Tem o valor cheio?'},
+  ver_carro:          {lb:'Ver carro',              cor:'blue',   extra:'t',  q:'Qual carro?'},
+  negociando:         {lb:'Negociando',             cor:'amber',  extra:'t',  q:'Qual a situação dele?'},
+  negocio_pendente:   {lb:'Negócio pendente',       cor:'amber',  extra:'t',  q:'Situação (o que falta pra fechar?)'},
+  desconfiado:        {lb:'Desconfiado',            cor:'amber',  extra:'t',  q:'Situação / o que escrever pra ele'},
+  acompanhar_distancia:{lb:'Acompanhar distância',  cor:'purple', extra:'td', q:'Situação'},
+  acompanhar_agenda:  {lb:'Acompanhar agenda',      cor:'purple', extra:'td', q:'Situação'},
+  acompanhar_nao_decisor:{lb:'Acompanhar não decisor',cor:'purple',extra:'td',q:'Situação (quem decide junto?)'},
+  acompanhar_outros:  {lb:'Acompanhar outros',      cor:'purple', extra:'td', q:'Situação'},
+  agendamento_inicial:{lb:'Agendamento inicial',    cor:'teal',   extra:'d'},
+  confirmado:         {lb:'Confirmado',             cor:'teal',   extra:'d'},
+  primeira_visita:    {lb:'Primeira visita',        cor:'blue',   extra:'t',  q:'Por que veio e não assinou?'},
+  fechou:             {lb:'Fechou',                 cor:'green',  extra:'t',  q:'Anotação sobre o pós-venda'},
+  reagendado:         {lb:'Reagendado',             cor:'teal',   extra:'d'},
+  reagendado_confirmado:{lb:'Reagendado confirmado', cor:'teal',  extra:'d'}
+};
+var CORES = {gray:'#8B959B', red:'#E4572E', amber:'#FFB020', blue:'#58A6FF', purple:'#B18CFF', teal:'#2FD6A7', green:'#4CD964'};
+var NEG_CATS = Object.keys(CATS).filter(function(k){ return k!=='sem_retorno'; });
+var AGD_CATS = ['agendamento_inicial','confirmado','reagendado','reagendado_confirmado'];
+var CONFIRMAR_CATS = ['agendamento_inicial','reagendado'];
+
+var db = {clientes:[], ligacoes:[]};
+try{ var raw = localStorage.getItem('crm_pedro_v1'); if(raw) db = JSON.parse(raw); }catch(e){}
+if(!db.clientes) db.clientes = [];
+if(!db.ligacoes) db.ligacoes = [];
+if(!db.ligAtendidas) db.ligAtendidas = [];
+
+function save(){ localStorage.setItem('crm_pedro_v1', JSON.stringify(db)); }
+function toast(t){ var m=document.getElementById('toast'); m.textContent=t; m.classList.add('show'); clearTimeout(m._t); m._t=setTimeout(function(){m.classList.remove('show')},2600); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+var periodo = 'hoje';
+var PERIODOS = [['hoje','Hoje'],['7d','7 dias'],['mes','Mês'],['tudo','Tudo']];
+function inicioPeriodo(){
+  var n = new Date();
+  if(periodo==='hoje') return new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime();
+  if(periodo==='7d')   return n.getTime() - 7*864e5;
+  if(periodo==='mes')  return new Date(n.getFullYear(),n.getMonth(),1).getTime();
+  return 0;
+}
+function fimPeriodo(){
+  var n = new Date();
+  if(periodo==='hoje') return new Date(n.getFullYear(),n.getMonth(),n.getDate()+1).getTime()-1;
+  if(periodo==='7d')   return n.getTime() + 7*864e5;
+  if(periodo==='mes')  return new Date(n.getFullYear(),n.getMonth()+1,1).getTime()-1;
+  return Infinity;
+}
+function compromissosPeriodo(){
+  var hoje0 = new Date(); hoje0.setHours(0,0,0,0);
+  var fim = fimPeriodo();
+  return compromissos().filter(function(e){ return e.ts>=hoje0.getTime() && e.ts<=fim; });
+}
+
+function selCategorias(id, todosLabel){
+  var s = document.getElementById(id);
+  var h = '<option value="">'+todosLabel+'</option>';
+  for(var k in CATS) h += '<option value="'+k+'">'+CATS[k].lb+'</option>';
+  s.innerHTML = h;
+}
+
+function ultimaEntrada(c, cats){
+  if(!c.hist) return c.criadoEm||0;
+  for(var i=c.hist.length-1; i>=0; i--) if(cats.indexOf(c.hist[i].cat)>=0) return c.hist[i].ts;
+  return 0;
+}
+
+function renderPeriod(){
+  var el = document.getElementById('periodChips');
+  el.innerHTML = PERIODOS.map(function(p){
+    return '<button class="chip'+(periodo===p[0]?' on':'')+'" onclick="setPeriodo(\''+p[0]+'\')">'+p[1]+'</button>';
+  }).join('');
+}
+function setPeriodo(p){ periodo=p; renderPeriod(); renderDash(); }
+
+function renderDash(){
+  var ini = inicioPeriodo();
+  var fCat = document.getElementById('dashCat').value;
+  var cs = db.clientes.filter(function(c){ return !fCat || c.categoria===fCat; });
+  var lig = db.ligacoes.filter(function(t){ return t>=ini; }).length;
+  var atend = db.ligAtendidas.filter(function(t){ return t>=ini; }).length;
+  var contatos = cs.filter(function(c){ return (c.criadoEm||0)>=ini; }).length;
+  var agd = cs.filter(function(c){ return AGD_CATS.indexOf(c.categoria)>=0 && ultimaEntrada(c,AGD_CATS)>=ini; }).length;
+  var neg = cs.filter(function(c){ return NEG_CATS.indexOf(c.categoria)>=0 && ultimaEntrada(c,NEG_CATS)>=ini; }).length;
+  var vendas = cs.filter(function(c){ return c.categoria==='fechou' && ultimaEntrada(c,['fechou'])>=ini; }).length;
+  var lembretes = compromissosPeriodo().length;
+  document.getElementById('metrics').innerHTML =
+    '<div class="metric"><div class="lb">Ligações</div><div class="num">'+lig+'</div>'+
+      '<button class="minus" onclick="mudaLig(-1,\'ligacoes\')" title="Desfazer">−</button>'+
+      '<button class="plus" onclick="mudaLig(1,\'ligacoes\')" title="Registrar ligação">+</button></div>'+
+    '<div class="metric"><div class="lb">Atendidas</div><div class="num">'+atend+'</div>'+
+      '<button class="minus" onclick="mudaLig(-1,\'ligAtendidas\')" title="Desfazer">−</button>'+
+      '<button class="plus" onclick="mudaLig(1,\'ligAtendidas\')" title="Registrar ligação atendida">+</button></div>'+
+    '<div class="metric"><div class="lb">Contatos</div><div class="num">'+contatos+'</div></div>'+
+    '<div class="metric"><div class="lb">Agendamentos</div><div class="num">'+agd+'</div></div>'+
+    '<div class="metric"><div class="lb">Negociações</div><div class="num">'+neg+'</div></div>'+
+    '<div class="metric"><div class="lb">Lembretes</div><div class="num">'+lembretes+'</div></div>'+
+    '<div class="metric sale"><div class="lb">Vendas</div><div class="num">'+vendas+'</div></div>';
+  renderAgenda();
+}
+function mudaLig(d,tipo){
+  if(d>0){
+    db[tipo].push(Date.now());
+    if(tipo==='ligAtendidas') db.ligacoes.push(Date.now());
+  }else{
+    var ini = inicioPeriodo();
+    var tira = function(arr){
+      for(var i=arr.length-1;i>=0;i--) if(arr[i]>=ini){ arr.splice(i,1); return true; }
+      return false;
+    };
+    if(!tira(db[tipo])){ toast('Nada pra desfazer no período'); return; }
+    if(tipo==='ligAtendidas') tira(db.ligacoes);
+  }
+  save(); renderDash();
+}
+
+function compromissos(){
+  var evs = [];
+  db.clientes.forEach(function(c){
+    var nome = c.nome || c.numero;
+    var cat = CATS[c.categoria];
+    if(cat && cat.extra && cat.extra.indexOf('d')>=0 && c.data){
+      if(c.hora){
+        var ts = new Date(c.data+'T'+c.hora).getTime();
+        if(!isNaN(ts)){
+          evs.push({ts:ts, quem:nome, oq:cat.lb+(c.detalhe?' — '+c.detalhe:''), id:c.id});
+          if(CONFIRMAR_CATS.indexOf(c.categoria)>=0)
+            evs.push({ts:ts-36e5, quem:nome, oq:'Confirmar agendamento (1h antes de '+c.hora+')', id:c.id});
+        }
+      }else{
+        var t7 = new Date(c.data+'T07:00').getTime();
+        if(!isNaN(t7)) evs.push({ts:t7, quem:nome, oq:'Confirmar o horário de hoje — '+cat.lb+(c.detalhe?' — '+c.detalhe:''), id:c.id});
+      }
+    }
+    if(c.lembrete && c.lemData){
+      var t2 = new Date(c.lemData+'T'+(c.lemHora||'07:00')).getTime();
+      if(!isNaN(t2)) evs.push({ts:t2, quem:nome, oq:'Lembrete — '+c.lembrete, id:c.id});
+    }
+  });
+  var corte = new Date(); corte.setHours(0,0,0,0);
+  evs = evs.filter(function(e){ return e.ts>=corte.getTime(); });
+  evs.sort(function(a,b){ return a.ts-b.ts; });
+  return evs;
+}
+function renderAgenda(){
+  var evs = compromissosPeriodo().slice(0,10);
+  var el = document.getElementById('agenda');
+  if(!evs.length){ el.innerHTML = '<div class="empty">Nenhum compromisso neste período. Mude o filtro ali em cima ou preencha data e hora na ficha do cliente.</div>'; return; }
+  var agora = Date.now();
+  el.innerHTML = evs.map(function(e){
+    var d = new Date(e.ts);
+    var hh = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    var hoje = new Date(); var ehHoje = d.toDateString()===hoje.toDateString();
+    var dia = ehHoje ? 'hoje' : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    var destaque = e.ts>=agora && e.ts-agora<=36e5;
+    return '<div class="ag'+(destaque?' now':'')+'" onclick="abrirFicha(\''+e.id+'\')" style="cursor:pointer">'+
+      '<div class="when">'+hh+'<small>'+dia+'</small></div>'+
+      '<div><div class="who">'+esc(e.quem)+'</div><div class="what">'+esc(e.oq)+'</div></div></div>';
+  }).join('');
+}
+
+function relogio(){
+  var n = new Date();
+  document.getElementById('clkTime').textContent =
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clkDate').textContent =
+    n.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'long'});
+}
+setInterval(relogio, 1000);
+
+function trocaTab(t){
+  document.getElementById('telaDash').style.display = t==='dash'?'':'none';
+  document.getElementById('telaClientes').style.display = t==='cli'?'':'none';
+  document.getElementById('fab').style.display = t==='cli'?'':'none';
+  document.getElementById('tabDash').className = t==='dash'?'on':'';
+  document.getElementById('tabCli').className = t==='cli'?'on':'';
+  if(t==='dash') renderDash(); else renderList();
+}
+
+function renderList(){
+  var q = (document.getElementById('busca').value||'').toLowerCase();
+  var fc = document.getElementById('fCat').value;
+  var ord = document.getElementById('fOrd').value;
+  var cs = db.clientes.slice();
+  if(fc) cs = cs.filter(function(c){ return c.categoria===fc; });
+  if(q) cs = cs.filter(function(c){
+    return (c.nome||'').toLowerCase().indexOf(q)>=0 || (c.numero||'').indexOf(q)>=0 || (c.carro||'').toLowerCase().indexOf(q)>=0;
+  });
+  if(ord==='az') cs.sort(function(a,b){ return (a.nome||'zzz').localeCompare(b.nome||'zzz','pt-BR'); });
+  else if(ord==='contato') cs.sort(function(a,b){ return (a.criadoEm||0)-(b.criadoEm||0); });
+  else cs.sort(function(a,b){ return (b.atualizadoEm||b.criadoEm||0)-(a.atualizadoEm||a.criadoEm||0); });
+  var el = document.getElementById('listaClientes');
+  if(!cs.length){ el.innerHTML = '<div class="empty">Nenhum cliente aqui. Toque no + pra cadastrar ou use Importar JSON.</div>'; return; }
+  el.innerHTML = cs.map(function(c){
+    var cat = CATS[c.categoria]||{lb:c.categoria,cor:'gray'};
+    var cor = CORES[cat.cor];
+    var extra = '';
+    if(c.carro) extra += esc(c.carro) + (c.valor?' · R$ '+Number(c.valor).toLocaleString('pt-BR'):'');
+    else if(c.valor) extra += 'R$ '+Number(c.valor).toLocaleString('pt-BR');
+    return '<div class="card" onclick="abrirFicha(\''+c.id+'\')">'+
+      '<div class="nm">'+esc(c.nome||'(sem nome)')+'</div>'+
+      '<div class="ph">'+esc(c.numero)+'</div>'+
+      '<span class="pill" style="color:'+cor+'; background:'+cor+'22; border:1px solid '+cor+'55">'+cat.lb+'</span>'+
+      (extra?'<div class="meta">'+extra+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+var editId = null;
+function abrirFicha(id){
+  editId = id||null;
+  var c = id ? db.clientes.find(function(x){return x.id===id;}) : null;
+  document.getElementById('fichaTitulo').textContent = c ? 'Editar cliente' : 'Novo cliente';
+  document.getElementById('btnExcluir').style.display = c ? '' : 'none';
+  document.getElementById('cNumero').value = c?c.numero:'';
+  document.getElementById('cNome').value = c?(c.nome||''):'';
+  document.getElementById('cCarro').value = c?(c.carro||''):'';
+  document.getElementById('cValor').value = c&&c.valor!=null?c.valor:'';
+  document.getElementById('cCat').value = c?c.categoria:'';
+  document.getElementById('cDetalhe').value = c?(c.detalhe||''):'';
+  document.getElementById('cData').value = c?(c.data||''):'';
+  document.getElementById('cHora').value = c?(c.hora||''):'';
+  document.getElementById('cObs').value = c?(c.obs||''):'';
+  document.getElementById('cLembrete').value = c?(c.lembrete||''):'';
+  document.getElementById('cLemData').value = c?(c.lemData||''):'';
+  document.getElementById('cLemHora').value = c?(c.lemHora||''):'';
+  atualizaCond();
+  document.getElementById('ovFicha').classList.add('show');
+  window.scrollTo(0,0);
+}
+function fecharFicha(){ document.getElementById('ovFicha').classList.remove('show'); }
+
+function atualizaCond(){
+  var k = document.getElementById('cCat').value;
+  var cat = CATS[k];
+  var box = document.getElementById('condBox');
+  if(!cat || !cat.extra){ box.style.display='none'; return; }
+  box.style.display='';
+  var temT = cat.extra.indexOf('t')>=0, temD = cat.extra.indexOf('d')>=0;
+  document.getElementById('condTexto').style.display = temT?'':'none';
+  document.getElementById('condData').style.display = temD?'':'none';
+  if(temT) document.getElementById('condTextoLb').innerHTML = (cat.q||'Situação')+' <span class="req">*</span>';
+}
+
+function salvarFicha(){
+  var numero = document.getElementById('cNumero').value.trim();
+  var catK = document.getElementById('cCat').value;
+  if(!numero){ toast('Preencha o número'); return; }
+  if(!catK){ toast('Escolha a categoria'); return; }
+  var cat = CATS[catK];
+  var detalhe = document.getElementById('cDetalhe').value.trim();
+  var data = document.getElementById('cData').value;
+  var hora = document.getElementById('cHora').value;
+  if(cat.extra && cat.extra.indexOf('t')>=0 && !detalhe){ toast('Preencha: '+(cat.q||'situação')); return; }
+  if(cat.extra && cat.extra.indexOf('d')>=0 && !data){ toast('Preencha a data'); return; }
+  var agora = Date.now();
+  var c;
+  if(editId){ c = db.clientes.find(function(x){return x.id===editId;}); }
+  else{ c = {id:'c'+agora+Math.floor(Math.random()*1e4), criadoEm:agora, hist:[]}; db.clientes.push(c); }
+  if(c.categoria!==catK){ if(!c.hist)c.hist=[]; c.hist.push({cat:catK, ts:agora}); }
+  c.numero = numero;
+  c.nome = document.getElementById('cNome').value.trim();
+  c.carro = document.getElementById('cCarro').value.trim();
+  var v = document.getElementById('cValor').value.replace(/[^\d]/g,'');
+  c.valor = v?Number(v):null;
+  c.categoria = catK;
+  c.detalhe = (cat.extra&&cat.extra.indexOf('t')>=0)?detalhe:'';
+  c.data = (cat.extra&&cat.extra.indexOf('d')>=0)?data:'';
+  c.hora = (cat.extra&&cat.extra.indexOf('d')>=0)?hora:'';
+  c.obs = document.getElementById('cObs').value.trim();
+  c.lembrete = document.getElementById('cLembrete').value.trim();
+  c.lemData = document.getElementById('cLemData').value;
+  c.lemHora = document.getElementById('cLemHora').value;
+  c.atualizadoEm = agora;
+  save(); fecharFicha(); toast('Cliente salvo'); renderList(); renderDash();
+}
+function excluirCliente(){
+  if(!editId) return;
+  if(!confirm('Excluir este cliente?')) return;
+  db.clientes = db.clientes.filter(function(x){return x.id!==editId;});
+  save(); fecharFicha(); toast('Cliente excluído'); renderList(); renderDash();
+}
+
+function abrirImport(){ document.getElementById('importRes').textContent=''; document.getElementById('ovImport').classList.add('show'); }
+function fecharImport(){ document.getElementById('ovImport').classList.remove('show'); }
+function importarJSON(){
+  var txt = document.getElementById('jsonIn').value.trim();
+  var res = document.getElementById('importRes');
+  if(!txt){ res.textContent='Cole o JSON primeiro.'; return; }
+  txt = txt.replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  var dados;
+  try{ dados = JSON.parse(txt); }catch(e){ res.textContent='JSON inválido: '+e.message; return; }
+  if(!Array.isArray(dados)) dados = [dados];
+  var ok=0, erros=[];
+  dados.forEach(function(d,i){
+    var numero = String(d.numero||'').replace(/[^\d]/g,'');
+    var catK = String(d.categoria||'').toLowerCase().trim();
+    if(!numero){ erros.push('Item '+(i+1)+': sem número'); return; }
+    if(!CATS[catK]){ erros.push('Item '+(i+1)+': categoria inválida "'+(d.categoria||'')+'"'); return; }
+    var cat = CATS[catK];
+    var detalhe = d.detalhe!=null?String(d.detalhe):'';
+    var data = d.data!=null?String(d.data):'';
+    var hora = d.hora!=null?String(d.hora):'';
+    if(cat.extra && cat.extra.indexOf('d')>=0 && !data){ erros.push('Item '+(i+1)+' ('+cat.lb+'): falta a data'); return; }
+    var lem='', lemData='', lemHora='';
+    if(d.lembrete){
+      if(typeof d.lembrete==='object'){ lem=String(d.lembrete.motivo||''); lemData=String(d.lembrete.data||''); lemHora=String(d.lembrete.hora||''); }
+      else lem = String(d.lembrete);
+    }
+    var agora = Date.now();
+    var existente = db.clientes.find(function(x){ return x.numero.replace(/[^\d]/g,'')===numero; });
+    var c = existente || {id:'c'+agora+Math.floor(Math.random()*1e4)+i, criadoEm:agora, hist:[]};
+    if(c.categoria!==catK){ if(!c.hist)c.hist=[]; c.hist.push({cat:catK, ts:agora}); }
+    c.numero = numero;
+    if(d.nome!=null && d.nome!=='') c.nome = String(d.nome);
+    if(d.carro!=null && d.carro!=='') c.carro = String(d.carro);
+    if(d.valor!=null && d.valor!=='') c.valor = Number(String(d.valor).replace(/[^\d]/g,''))||null;
+    c.categoria = catK;
+    c.detalhe = detalhe;
+    c.data = data; c.hora = hora;
+    if(d.observacao!=null && d.observacao!=='') c.obs = String(d.observacao);
+    if(lem){ c.lembrete=lem; c.lemData=lemData; c.lemHora=lemHora; }
+    c.atualizadoEm = agora;
+    if(!existente) db.clientes.push(c);
+    ok++;
+  });
+  save(); renderList(); renderDash();
+  var msg = ok+' cliente(s) importado(s).';
+  if(erros.length) msg += '\n' + erros.join('\n');
+  res.textContent = msg;
+  if(ok && !erros.length){ document.getElementById('jsonIn').value=''; setTimeout(fecharImport, 1200); toast(ok+' cliente(s) importado(s)'); }
+}
+
+function restaurarBackup(ev){
+  var f = ev.target.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var d = JSON.parse(r.result);
+      if(!d || !Array.isArray(d.clientes)) throw new Error('formato');
+      if(!confirm('Restaurar backup com '+d.clientes.length+' cliente(s)? Isso substitui os dados atuais deste aparelho.')){ ev.target.value=''; return; }
+      db = {clientes:d.clientes, ligacoes:d.ligacoes||[], ligAtendidas:d.ligAtendidas||[]};
+      save(); renderList(); renderDash(); toast('Backup restaurado: '+db.clientes.length+' cliente(s)');
+    }catch(e){ toast('Arquivo de backup inválido'); }
+    ev.target.value='';
+  };
+  r.readAsText(f);
+}
+function exportarBackup(){
+  var blob = new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backup-painel-vendas-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+selCategorias('cCat','— escolha a categoria —');
+selCategorias('fCat','Todas as categorias');
+selCategorias('dashCat','Todas as categorias');
+renderPeriod(); relogio(); renderDash(); renderList();
+</script>
 </body>
 </html>
