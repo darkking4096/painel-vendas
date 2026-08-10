@@ -186,6 +186,16 @@ header.top h1 span{color:var(--amber)}
         <input id="cValor" inputmode="numeric" placeholder="55000">
       </div>
     </div>
+    <label>Data do contato</label>
+    <input type="date" id="cDataContato">
+    <div style="font-size:12px; color:var(--tx2); margin-top:5px">Quando você falou com ele. Pode ser uma data antiga, pra cadastrar contatos de antes.</div>
+    <label>Ligações</label>
+    <div style="display:flex; gap:8px; flex-wrap:wrap">
+      <button type="button" class="iconbtn" onclick="addLig(false)">+ Liguei, não atendeu</button>
+      <button type="button" class="iconbtn" onclick="addLig(true)">+ Liguei, atendeu</button>
+      <button type="button" class="iconbtn" onclick="desfazLig()">Desfazer</button>
+    </div>
+    <div id="ligInfo" style="font-size:12px; color:var(--tx2); margin-top:6px"></div>
     <label>Categoria <span class="req">*</span></label>
     <select id="cCat" onchange="atualizaCond()"></select>
     <div class="condbox" id="condBox" style="display:none">
@@ -210,6 +220,7 @@ header.top h1 span{color:var(--amber)}
       <div><label>Hora do lembrete</label><input type="time" id="cLemHora"></div>
     </div>
     <button class="btn save" onclick="salvarFicha()">Salvar</button>
+    <button class="btn ghost" id="btnCopiar" style="display:none" onclick="copiarJSON()">Copiar JSON deste cliente</button>
     <button class="btn del" id="btnExcluir" style="display:none" onclick="excluirCliente()">Excluir cliente</button>
     <button class="btn ghost" onclick="fecharFicha()">Cancelar</button>
   </div>
@@ -264,6 +275,9 @@ if(!db.ligAtendidas) db.ligAtendidas = [];
 function save(){ localStorage.setItem('crm_pedro_v1', JSON.stringify(db)); }
 function toast(t){ var m=document.getElementById('toast'); m.textContent=t; m.classList.add('show'); clearTimeout(m._t); m._t=setTimeout(function(){m.classList.remove('show')},2600); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function hojeISO(){ var n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); }
+function tsContato(c){ return c.dataContato ? new Date(c.dataContato+'T12:00').getTime() : (c.criadoEm||0); }
+function fmtData(iso){ if(!iso) return ''; var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0].slice(2); }
 
 var periodo = 'hoje';
 var PERIODOS = [['hoje','Hoje'],['7d','7 dias'],['mes','Mês'],['tudo','Tudo']];
@@ -314,18 +328,19 @@ function renderDash(){
   var cs = db.clientes.filter(function(c){ return !fCat || c.categoria===fCat; });
   var lig = db.ligacoes.filter(function(t){ return t>=ini; }).length;
   var atend = db.ligAtendidas.filter(function(t){ return t>=ini; }).length;
-  var contatos = cs.filter(function(c){ return (c.criadoEm||0)>=ini; }).length;
+  cs.forEach(function(c){
+    (c.ligacoes||[]).forEach(function(l){
+      if(l.ts>=ini){ lig++; if(l.atendida) atend++; }
+    });
+  });
+  var contatos = cs.filter(function(c){ return tsContato(c)>=ini; }).length;
   var agd = cs.filter(function(c){ return AGD_CATS.indexOf(c.categoria)>=0 && ultimaEntrada(c,AGD_CATS)>=ini; }).length;
   var neg = cs.filter(function(c){ return NEG_CATS.indexOf(c.categoria)>=0 && ultimaEntrada(c,NEG_CATS)>=ini; }).length;
   var vendas = cs.filter(function(c){ return c.categoria==='fechou' && ultimaEntrada(c,['fechou'])>=ini; }).length;
   var lembretes = compromissosPeriodo().length;
   document.getElementById('metrics').innerHTML =
-    '<div class="metric"><div class="lb">Ligações</div><div class="num">'+lig+'</div>'+
-      '<button class="minus" onclick="mudaLig(-1,\'ligacoes\')" title="Desfazer">−</button>'+
-      '<button class="plus" onclick="mudaLig(1,\'ligacoes\')" title="Registrar ligação">+</button></div>'+
-    '<div class="metric"><div class="lb">Atendidas</div><div class="num">'+atend+'</div>'+
-      '<button class="minus" onclick="mudaLig(-1,\'ligAtendidas\')" title="Desfazer">−</button>'+
-      '<button class="plus" onclick="mudaLig(1,\'ligAtendidas\')" title="Registrar ligação atendida">+</button></div>'+
+    '<div class="metric"><div class="lb">Ligações</div><div class="num">'+lig+'</div></div>'+
+    '<div class="metric"><div class="lb">Atendidas</div><div class="num">'+atend+'</div></div>'+
     '<div class="metric"><div class="lb">Contatos</div><div class="num">'+contatos+'</div></div>'+
     '<div class="metric"><div class="lb">Agendamentos</div><div class="num">'+agd+'</div></div>'+
     '<div class="metric"><div class="lb">Negociações</div><div class="num">'+neg+'</div></div>'+
@@ -333,20 +348,26 @@ function renderDash(){
     '<div class="metric sale"><div class="lb">Vendas</div><div class="num">'+vendas+'</div></div>';
   renderAgenda();
 }
-function mudaLig(d,tipo){
-  if(d>0){
-    db[tipo].push(Date.now());
-    if(tipo==='ligAtendidas') db.ligacoes.push(Date.now());
-  }else{
-    var ini = inicioPeriodo();
-    var tira = function(arr){
-      for(var i=arr.length-1;i>=0;i--) if(arr[i]>=ini){ arr.splice(i,1); return true; }
-      return false;
-    };
-    if(!tira(db[tipo])){ toast('Nada pra desfazer no período'); return; }
-    if(tipo==='ligAtendidas') tira(db.ligacoes);
+var fichaLigs = [];
+function addLig(atendida){
+  fichaLigs.push({ts:Date.now(), atendida:!!atendida});
+  renderLigInfo();
+}
+function desfazLig(){
+  if(fichaLigs.length){ fichaLigs.pop(); }
+  else{
+    var c = editId ? db.clientes.find(function(x){return x.id===editId;}) : null;
+    if(c && c.ligacoes && c.ligacoes.length){ c.ligacoes.pop(); save(); renderDash(); }
+    else{ toast('Nada pra desfazer'); return; }
   }
-  save(); renderDash();
+  renderLigInfo();
+}
+function renderLigInfo(){
+  var c = editId ? db.clientes.find(function(x){return x.id===editId;}) : null;
+  var ls = ((c&&c.ligacoes)?c.ligacoes:[]).concat(fichaLigs);
+  var a = ls.filter(function(l){return l.atendida;}).length;
+  document.getElementById('ligInfo').textContent =
+    ls.length ? ls.length+' ligação(ões) registrada(s), '+a+' atendida(s)'+(fichaLigs.length?' — salve pra confirmar as novas':'') : 'Nenhuma ligação registrada ainda';
 }
 
 function compromissos(){
@@ -422,7 +443,7 @@ function renderList(){
     return (c.nome||'').toLowerCase().indexOf(q)>=0 || (c.numero||'').indexOf(q)>=0 || (c.carro||'').toLowerCase().indexOf(q)>=0;
   });
   if(ord==='az') cs.sort(function(a,b){ return (a.nome||'zzz').localeCompare(b.nome||'zzz','pt-BR'); });
-  else if(ord==='contato') cs.sort(function(a,b){ return (a.criadoEm||0)-(b.criadoEm||0); });
+  else if(ord==='contato') cs.sort(function(a,b){ return tsContato(b)-tsContato(a); });
   else cs.sort(function(a,b){ return (b.atualizadoEm||b.criadoEm||0)-(a.atualizadoEm||a.criadoEm||0); });
   var el = document.getElementById('listaClientes');
   if(!cs.length){ el.innerHTML = '<div class="empty">Nenhum cliente aqui. Toque no + pra cadastrar ou use Importar JSON.</div>'; return; }
@@ -437,6 +458,7 @@ function renderList(){
       '<div class="ph">'+esc(c.numero)+'</div>'+
       '<span class="pill" style="color:'+cor+'; background:'+cor+'22; border:1px solid '+cor+'55">'+cat.lb+'</span>'+
       (extra?'<div class="meta">'+extra+'</div>':'')+
+      (c.dataContato?'<div class="meta">Contato: '+fmtData(c.dataContato)+'</div>':'')+
       '</div>';
   }).join('');
 }
@@ -444,9 +466,12 @@ function renderList(){
 var editId = null;
 function abrirFicha(id){
   editId = id||null;
+  fichaLigs = [];
   var c = id ? db.clientes.find(function(x){return x.id===id;}) : null;
   document.getElementById('fichaTitulo').textContent = c ? 'Editar cliente' : 'Novo cliente';
   document.getElementById('btnExcluir').style.display = c ? '' : 'none';
+  document.getElementById('btnCopiar').style.display = c ? '' : 'none';
+  document.getElementById('cDataContato').value = c?(c.dataContato||''):hojeISO();
   document.getElementById('cNumero').value = c?c.numero:'';
   document.getElementById('cNome').value = c?(c.nome||''):'';
   document.getElementById('cCarro').value = c?(c.carro||''):'';
@@ -460,6 +485,7 @@ function abrirFicha(id){
   document.getElementById('cLemData').value = c?(c.lemData||''):'';
   document.getElementById('cLemHora').value = c?(c.lemHora||''):'';
   atualizaCond();
+  renderLigInfo();
   document.getElementById('ovFicha').classList.add('show');
   window.scrollTo(0,0);
 }
@@ -502,10 +528,12 @@ function salvarFicha(){
   c.detalhe = (cat.extra&&cat.extra.indexOf('t')>=0)?detalhe:'';
   c.data = (cat.extra&&cat.extra.indexOf('d')>=0)?data:'';
   c.hora = (cat.extra&&cat.extra.indexOf('d')>=0)?hora:'';
+  c.dataContato = document.getElementById('cDataContato').value || c.dataContato || hojeISO();
   c.obs = document.getElementById('cObs').value.trim();
   c.lembrete = document.getElementById('cLembrete').value.trim();
   c.lemData = document.getElementById('cLemData').value;
   c.lemHora = document.getElementById('cLemHora').value;
+  if(fichaLigs.length){ c.ligacoes = (c.ligacoes||[]).concat(fichaLigs); fichaLigs = []; }
   c.atualizadoEm = agora;
   save(); fecharFicha(); toast('Cliente salvo'); renderList(); renderDash();
 }
@@ -553,6 +581,18 @@ function importarJSON(){
     c.categoria = catK;
     c.detalhe = detalhe;
     c.data = data; c.hora = hora;
+    if(d.data_contato!=null && d.data_contato!=='') c.dataContato = String(d.data_contato);
+    else if(!existente) c.dataContato = hojeISO();
+    if(d.ligacao){
+      var ligs = Array.isArray(d.ligacao) ? d.ligacao : [d.ligacao];
+      var tsLig = c.dataContato ? new Date(c.dataContato+'T12:00').getTime() : agora;
+      if(isNaN(tsLig)) tsLig = agora;
+      ligs.forEach(function(v){
+        v = String(v).toLowerCase().trim();
+        if(v==='atendida'){ if(!c.ligacoes)c.ligacoes=[]; c.ligacoes.push({ts:tsLig, atendida:true}); }
+        else if(v==='nao_atendida'||v==='não_atendida'){ if(!c.ligacoes)c.ligacoes=[]; c.ligacoes.push({ts:tsLig, atendida:false}); }
+      });
+    }
     if(d.observacao!=null && d.observacao!=='') c.obs = String(d.observacao);
     if(lem){ c.lembrete=lem; c.lemData=lemData; c.lemHora=lemHora; }
     c.atualizadoEm = agora;
@@ -566,6 +606,35 @@ function importarJSON(){
   if(ok && !erros.length){ document.getElementById('jsonIn').value=''; setTimeout(fecharImport, 1200); toast(ok+' cliente(s) importado(s)'); }
 }
 
+function copiarJSON(){
+  if(!editId) return;
+  var c = db.clientes.find(function(x){return x.id===editId;}); if(!c) return;
+  var o = {
+    numero: c.numero,
+    nome: c.nome||null,
+    carro: c.carro||null,
+    valor: c.valor!=null?c.valor:null,
+    categoria: c.categoria,
+    detalhe: c.detalhe||null,
+    data: c.data||null,
+    hora: c.hora||null,
+    data_contato: c.dataContato||null,
+    ligacao: null,
+    observacao: c.obs||null,
+    lembrete: c.lembrete?{motivo:c.lembrete, data:c.lemData||null, hora:c.lemHora||null}:null
+  };
+  var txt = JSON.stringify([o], null, 2);
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('JSON copiado'); }
+    catch(e){ prompt('Copie o JSON:', txt); }
+    document.body.removeChild(ta);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(function(){ toast('JSON copiado'); }, fallback);
+  else fallback();
+}
 function restaurarBackup(ev){
   var f = ev.target.files[0]; if(!f) return;
   var r = new FileReader();
