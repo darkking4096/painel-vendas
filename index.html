@@ -193,6 +193,7 @@ header.top h1 span{color:var(--amber)}
     <div style="display:flex; gap:8px">
       <button class="iconbtn" onclick="document.getElementById('fileRestore').click()">Restaurar</button>
       <button class="iconbtn" onclick="exportarBackup()">Backup</button>
+      <button class="iconbtn" title="Configurações" onclick="document.getElementById('ovConfig').classList.add('show')">⚙</button>
       <input type="file" id="fileRestore" accept=".json,application/json" style="display:none" onchange="restaurarBackup(event)">
     </div>
   </header>
@@ -427,6 +428,17 @@ header.top h1 span{color:var(--amber)}
     <div id="parabensTxt" style="font-size:14px; color:var(--tx2); margin-top:8px; line-height:1.5"></div>
     <button class="btn save" onclick="expandirMeta()">Expandir meta</button>
     <button class="btn ghost" onclick="concluirMeta()">Concluir meta</button>
+  </div>
+</div>
+
+<div class="overlay" id="ovConfig">
+  <div class="inner popbox">
+    <div class="ovhead">
+      <h2>Configurações</h2>
+      <button class="iconbtn" onclick="document.getElementById('ovConfig').classList.remove('show')">Fechar</button>
+    </div>
+    <div style="font-size:13.5px; color:var(--tx2); margin-top:10px; line-height:1.5">Zerar o sistema apaga <b style="color:var(--tx)">tudo</b>: clientes, fechamentos, histórico, tarefas e meta. Não tem volta — se quiser guardar, faça um Backup antes.</div>
+    <button class="btn del" onclick="resetarTudo()">Zerar todas as informações</button>
   </div>
 </div>
 
@@ -1540,6 +1552,16 @@ function restaurarBackup(ev){
     ev.target.value='';
   };
   r.readAsText(f);
+}
+function resetarTudo(){
+  if(!confirm('Tem certeza? Isso apaga TODOS os clientes, fechamentos, histórico, tarefas e meta.')) return;
+  if(!confirm('Última confirmação: zerar tudo agora?')) return;
+  db = {clientes:[], ligacoes:[], ligAtendidas:[], historico:[], tarefas:{}, meta:null, nextSid:1};
+  localStorage.removeItem('crm_pedro_v1');
+  save();
+  document.getElementById('ovConfig').classList.remove('show');
+  renderList(); renderDash(); renderFech(); renderHist();
+  toast('Sistema zerado');
 }
 function exportarBackup(){
   var blob = new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
