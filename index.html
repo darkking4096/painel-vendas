@@ -489,6 +489,7 @@ if(!db.ligAtendidas) db.ligAtendidas = [];
 if(!db.historico) db.historico = [];
 if(!db.tarefas) db.tarefas = {};
 if(!db.meta) db.meta = null;
+if(!db.metaBase) db.metaBase = 0;
 if(!db.nextSid) db.nextSid = 1;
 
 function migrar(){
@@ -557,7 +558,8 @@ function scoreCliente(c){
   return Math.round(s);
 }
 function listaPromissores(){
-  var xs = db.clientes.map(function(c){ return {c:c, s:scoreCliente(c)}; }).filter(function(x){ return x.s>0; });
+  var xs = db.clientes.filter(function(c){ return c.categoria!=='fechou'; })
+    .map(function(c){ return {c:c, s:scoreCliente(c)}; }).filter(function(x){ return x.s>0; });
   if(!xs.length) return [];
   var media = xs.reduce(function(a,x){return a+x.s;},0)/xs.length;
   xs.sort(function(a,b){ return b.s-a.s; });
@@ -684,7 +686,8 @@ function renderMeta(){
   }
   var prog = progressoMeta();
   var pct = db.meta.alvo? Math.min(100, Math.round(prog/db.meta.alvo*100)) : 0;
-  el.innerHTML = '<div class="mh"><div><div class="lb">Meta até '+fmtDataFull(db.meta.fim)+'</div>'+
+  var vencida = db.meta.fim && db.meta.fim < hojeISO();
+  el.innerHTML = '<div class="mh"><div><div class="lb">Meta até '+fmtDataFull(db.meta.fim)+(vencida?' <span style="color:var(--red)">— prazo vencido, edite a data</span>':'')+'</div>'+
     '<div class="mnum">'+fmtMoney(prog)+' <small>de '+fmtMoney(db.meta.alvo)+' ('+pct+'%)</small></div></div>'+
     '<button class="iconbtn" onclick="abrirMeta()">Editar</button></div>'+
     '<div class="mbar"><i style="width:'+pct+'%"></i></div>';
@@ -698,7 +701,7 @@ function renderMeta(){
 function progressoMeta(){
   if(!db.meta) return 0;
   var fimTs = db.meta.fim ? new Date(db.meta.fim+'T23:59:59').getTime() : Infinity;
-  var fs = fechamentosIntervalo(db.meta.inicio||0, fimTs);
+  var fs = fechamentosIntervalo(db.metaBase||0, fimTs);
   return fs.reduce(function(a,c){ return a+((c.fech&&c.fech.cota)||0); },0);
 }
 function abrirMeta(){
@@ -712,6 +715,7 @@ function salvarMeta(){
   var fim = document.getElementById('metaFim').value;
   if(!alvo){ toast('Informe o valor da meta'); return; }
   if(!fim){ toast('Informe o prazo'); return; }
+  if(fim < hojeISO()){ toast('O prazo já passou — confira a data (e o ano)'); return; }
   if(db.meta){ db.meta.alvo = alvo; db.meta.fim = fim; db.meta.celebrada = progressoMeta()>=alvo && db.meta.celebrada; }
   else db.meta = {alvo:alvo, fim:fim, inicio:Date.now(), celebrada:false};
   save(); document.getElementById('ovMeta').classList.remove('show'); renderDash(); toast('Meta salva');
@@ -728,7 +732,7 @@ function expandirMeta(){
 function concluirMeta(){
   var prog = progressoMeta();
   logH('meta_concluida','Meta de '+fmtMoney(db.meta.alvo)+' concluída com '+fmtMoney(prog)+' vendidos em cotas.', null);
-  db.meta = null; save();
+  db.meta = null; db.metaBase = Date.now(); save();
   document.getElementById('ovParabens').classList.remove('show');
   renderDash(); toast('Meta concluída — registrada no histórico');
 }
@@ -1544,6 +1548,7 @@ function restaurarBackup(ev){
         historico: d.historico||[],
         tarefas: d.tarefas||{},
         meta: d.meta||null,
+        metaBase: d.metaBase||0,
         nextSid: d.nextSid||1
       };
       migrar();
@@ -1556,7 +1561,7 @@ function restaurarBackup(ev){
 function resetarTudo(){
   if(!confirm('Tem certeza? Isso apaga TODOS os clientes, fechamentos, histórico, tarefas e meta.')) return;
   if(!confirm('Última confirmação: zerar tudo agora?')) return;
-  db = {clientes:[], ligacoes:[], ligAtendidas:[], historico:[], tarefas:{}, meta:null, nextSid:1};
+  db = {clientes:[], ligacoes:[], ligAtendidas:[], historico:[], tarefas:{}, meta:null, metaBase:0, nextSid:1};
   localStorage.removeItem('crm_pedro_v1');
   save();
   document.getElementById('ovConfig').classList.remove('show');
