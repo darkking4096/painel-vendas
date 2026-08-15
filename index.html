@@ -1197,7 +1197,28 @@ function importarJSON(){
   if(!txt){ res.textContent='Cole o JSON primeiro.'; return; }
   txt = txt.replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
   var dados;
-  try{ dados = JSON.parse(txt); }catch(e){ res.textContent='JSON inválido: '+e.message; return; }
+  try{ dados = JSON.parse(txt); }
+  catch(e1){
+    var limpo = txt
+      .replace(/[\u200B-\u200D\u2060\uFEFF]/g,'')
+      .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g,' ')
+      .replace(/[“”„«»]/g,'"')
+      .replace(/[‘’‚]/g,"'")
+      .replace(/,\s*([\]}])/g,'$1');
+    var i1 = limpo.indexOf('['), i2 = limpo.lastIndexOf(']');
+    if(i1>=0 && i2>i1) limpo = limpo.slice(i1, i2+1);
+    try{ dados = JSON.parse(limpo); }
+    catch(e2){
+      var pos = /position (\d+)/.exec(e2.message);
+      var dica = '';
+      if(pos){
+        var p = Number(pos[1]);
+        dica = '\nPerto de: ...'+limpo.slice(Math.max(0,p-40), p+40).replace(/\s+/g,' ')+'...';
+      }
+      res.textContent = 'JSON inválido: '+e2.message+dica+'\nDica: copie de novo o JSON inteiro, do [ até o ], e cole aqui sem editar.';
+      return;
+    }
+  }
   if(!Array.isArray(dados)) dados = [dados];
   var novos=0, atualizados=0, erros=[];
   dados.forEach(function(d,i){
