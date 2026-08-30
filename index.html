@@ -226,7 +226,10 @@ header.top h1 span{color:var(--amber)}
 .fcard.urg{border-left-color:var(--red)}
 .fcard.hoje{border-left-color:var(--teal)}
 .fcard.aten{border-left-color:var(--amber)}
-.fcard .fq{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; cursor:pointer}
+.fcard{position:relative}
+.fcard .fdisp{position:absolute; top:6px; right:6px; width:34px; height:34px; border-radius:9px; background:none; border:1px solid var(--border2); color:var(--tx3); font-size:13px; line-height:1; padding:0; z-index:2}
+.fcard .fdisp::after{content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:44px; height:44px}
+.fcard .fq{padding-right:40px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; cursor:pointer}
 .fcard .fnm{font-size:15.5px; font-weight:600}
 .fcard .fnum{font-size:13px; color:var(--tx2); margin-top:1px}
 .fcard .fmot{font-size:13px; color:var(--tx); margin-top:7px; line-height:1.4}
@@ -410,7 +413,10 @@ header.top h1 span{color:var(--amber)}
   <section id="telaHistorico" style="display:none">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap">
       <div class="chips" id="histChips" style="margin:0 0 10px"></div>
-      <button class="iconbtn" style="margin-bottom:10px" onclick="baixarPDF()">Baixar PDF</button>
+      <div style="display:flex; gap:8px; margin-bottom:10px">
+        <button class="iconbtn" id="btHistFiltro" onclick="alternaHistFiltro()">Mostrando tudo</button>
+        <button class="iconbtn" onclick="baixarPDF()">Baixar PDF</button>
+      </div>
     </div>
     <div class="datefil" id="histCustom">
       <input type="date" id="histDe"> <span style="color:var(--tx3); font-size:13px">até</span>
@@ -751,7 +757,10 @@ var HIST_TIPOS = {
   parcela_paga:{lb:'Parcela paga', cor:'green'},
   contato:{lb:'Contato', cor:'blue'},
   promessa:{lb:'Promessa', cor:'amber'},
-  lead_encerrado:{lb:'Lead encerrado', cor:'gray'}
+  lead_encerrado:{lb:'Lead encerrado', cor:'gray'},
+  nao_compareceu:{lb:'Não compareceu', cor:'red'},
+  fila_dispensada:{lb:'Dispensado da fila', cor:'gray'},
+  lembrete_expirado:{lb:'Lembrete expirado', cor:'gray'}
 };
 var SEM_PROXIMO = ['sem_retorno','desinteressado','fechou'];
 var SUGESTOES = {
@@ -761,16 +770,31 @@ var SUGESTOES = {
   quer_a_vista:   {dias:30, comigo:true}
 };
 var CAMPOS_RASTREADOS = {
-  cat:   {lb:'categoria',           tipo:'cat'},
-  ent_t: {lb:'entrada disponível',  tipo:'dinheiro'},
-  ent_p: {lb:'entrada necessária',  tipo:'dinheiro'},
-  dt:    {lb:'data do agendamento', tipo:'data'},
-  hr:    {lb:'hora',                tipo:'texto'},
-  vei:   {lb:'veículo',             tipo:'texto'},
-  vlv:   {lb:'valor do veículo',    tipo:'dinheiro'},
-  ori:   {lb:'origem',              tipo:'origem'}
+  cat:   {lb:'categoria',            tipo:'cat'},
+  ent_t: {lb:'entrada disponível',   tipo:'dinheiro'},
+  ent_p: {lb:'entrada necessária',   tipo:'dinheiro'},
+  maos:  {lb:'entrada em mãos',      tipo:'simnao'},
+  inter: {lb:'interesse',            tipo:'simnao'},
+  tempo: {lb:'tempo disponível',     tipo:'simnao'},
+  prior: {lb:'prioridade',           tipo:'simnao'},
+  dt:    {lb:'data do agendamento',  tipo:'data'},
+  hr:    {lb:'hora do agendamento',  tipo:'texto'},
+  vei:   {lb:'veículo de interesse', tipo:'texto'},
+  vlv:   {lb:'valor do veículo',     tipo:'dinheiro'},
+  anun:  {lb:'anúncio',              tipo:'texto'},
+  ori:   {lb:'origem',               tipo:'origem'},
+  sit:   {lb:'situação',             tipo:'longo'},
+  nota:  {lb:'nota',                 tipo:'longo'},
+  prob:  {lb:'problemas e dores',    tipo:'longo'},
+  prom:  {lb:'promessa do cliente',  tipo:'longo'},
+  prox:  {lb:'próximo contato',      tipo:'texto'},
+  cota:  {lb:'cota',                 tipo:'dinheiro'},
+  parc:  {lb:'valor da parcela',     tipo:'dinheiro'},
+  pagas: {lb:'parcelas pagas',       tipo:'texto'},
+  contem:{lb:'contemplação',         tipo:'data'},
+  dados: {lb:'informações',          tipo:'lista'}
 };
-var HIST_IMPORTANTES = ['agendamento','fechamento','primeira_visita','meta_batida','meta_concluida','relatorio_dia','parcela_paga'];
+var HIST_IMPORTANTES = ['agendamento','fechamento','primeira_visita','nao_compareceu','meta_batida','meta_concluida','relatorio_dia','parcela_paga'];
 
 /* ======== ARMAZENAMENTO COMPACTO ======== */
 var HIST_ORDEM = Object.keys(HIST_TIPOS);
@@ -1283,7 +1307,22 @@ function sugestaoProximo(catK, dataAgd, promessaData){
   return null;
 }
 function precisaProximo(c){
-  return SEM_PROXIMO.indexOf(c.categoria)<0 && !prox(c).data;
+  var p = prox(c);
+  return SEM_PROXIMO.indexOf(c.categoria)<0 && !p.data && !p.expirado;
+}
+function expirarPendencias(){
+  var limite = isoMaisDias(-1), n = 0;
+  db.clientes.forEach(function(c){
+    var p = c.proximo;
+    if(!p || !p.data || p.comigo===false) return;
+    if(p.data >= limite) return;
+    logH('lembrete_expirado','Não foi feito e expirou — '+nomeCli(c)+' — '+c.numero+(p.motivo?': '+p.motivo:'')+' (era pra '+fmtDataFull(p.data)+')', c);
+    p.data = ''; p.hora = ''; p.expirado = true;
+    c.atualizadoEm = Date.now();
+    n++;
+  });
+  if(n) save();
+  return n;
 }
 function diasSemContato(c){
   var t = 0;
@@ -1358,6 +1397,7 @@ function renderFila(){
         '<div class="fnum">'+esc(c.numero)+'</div></div>'+
         '<span class="pill" style="color:'+cor+'; background:'+cor+'22; border:1px solid '+cor+'55">'+cat.lb+'</span>'+
       '</div>'+
+      '<button class="fdisp" title="Dispensar hoje" onclick="event.stopPropagation(); dispensarFila(\''+c.id+'\')">✕</button>'+
       '<div class="fmot">'+motivo+'</div>'+
       '<div class="fmeta"><b>'+sem+'</b> dia(s) sem contato · <b>'+ligs+'</b> toque(s), '+atend+' atendida(s) · '+atrasoTxt+'</div>'+
       '<div class="facts">'+
@@ -1423,7 +1463,8 @@ function salvarRapido(){
     data: data,
     hora: document.getElementById('rapHora').value,
     motivo: document.getElementById('rapMotivo').value.trim(),
-    comigo: rapidoBola
+    comigo: rapidoBola,
+    expirado: false
   };
   c.atualizadoEm = Date.now();
   marcarFeito(c.id);
@@ -1447,16 +1488,23 @@ function encerrarLead(){
 
 /* ======== MUDANÇAS RASTREADAS ======== */
 function valoresRastreados(c){
-  var r = (c.info&&c.info.requisitos)||{};
+  var inf = c.info||{}, r = inf.requisitos||{}, f = c.fech||{}, p = c.proximo||{}, pr = c.promessa||{};
+  function sn(v){ return v===true?'sim':(v===false?'não':null); }
   return {
     cat: c.categoria||null,
     ent_t: r.entrada_tem!=null?r.entrada_tem:null,
     ent_p: r.entrada_precisa!=null?r.entrada_precisa:null,
-    dt: c.data||null,
-    hr: c.hora||null,
-    vei: c.veiculo||null,
-    vlv: c.valorVeiculo!=null?c.valorVeiculo:null,
-    ori: c.origem||null
+    maos: sn(r.entrada_em_maos), inter: sn(r.interesse), tempo: sn(r.tempo), prior: sn(r.prioridade),
+    dt: c.data||null, hr: c.hora||null,
+    vei: c.veiculo||null, vlv: c.valorVeiculo!=null?c.valorVeiculo:null,
+    anun: c.anuncio||null, ori: c.origem||null,
+    sit: c.detalhe||null, nota: inf.nota||null, prob: inf.problemas||null,
+    prom: pr.texto? (pr.texto+(pr.data?' (até '+fmtDataFull(pr.data)+')':'')) : null,
+    prox: p.data? (fmtDataFull(p.data)+(p.motivo?' — '+p.motivo:'')+(p.comigo===false?' (com ele)':'')) : null,
+    cota: f.cota!=null?f.cota:null, parc: f.parcela!=null?f.parcela:null,
+    pagas: f.parcPagas!=null?String(f.parcPagas)+(f.totalParc?'/'+f.totalParc:''):null,
+    contem: f.contemplacao||null,
+    dados: (inf.dados||[]).map(function(d){ return d.titulo; }).join(', ')||null
   };
 }
 function diffRastreado(antes, depois){
@@ -1465,11 +1513,14 @@ function diffRastreado(antes, depois){
     var a = antes[k], b = depois[k];
     if(a===undefined) a = null;
     if(b===undefined) b = null;
-    if(a===''&&b===null) continue;
-    if(b===''&&a===null) continue;
+    if((a===''||a==null) && (b===''||b==null)) continue;
     if(String(a)!==String(b)) out.push([k, a, b]);
   }
   return out;
+}
+function corta(s, n){
+  s = String(s==null?'':s).replace(/\s+/g,' ').trim();
+  return s.length>n ? s.slice(0,n-1)+'…' : s;
 }
 function valorLegivel(campo, v){
   if(v==null || v==='') return 'vazio';
@@ -1480,11 +1531,35 @@ function valorLegivel(campo, v){
   if(t==='origem') return (ORIGENS[v]||{lb:v}).lb;
   return String(v);
 }
-function mudancasTexto(m){
+function frasesMudanca(m){
   return (m||[]).map(function(x){
-    var lb = (CAMPOS_RASTREADOS[x[0]]||{lb:x[0]}).lb;
-    return '<em>'+lb+':</em> <span class="de">'+esc(valorLegivel(x[0],x[1]))+'</span> → <span class="para">'+esc(valorLegivel(x[0],x[2]))+'</span>';
+    var campo = x[0], de = x[1], para = x[2];
+    var def = CAMPOS_RASTREADOS[campo] || {lb:campo, tipo:'texto'};
+    var lb = def.lb;
+    if(def.tipo==='lista'){
+      var antes = String(de||'').split(', ').filter(Boolean);
+      var dep = String(para||'').split(', ').filter(Boolean);
+      var novos = dep.filter(function(t){ return antes.indexOf(t)<0; });
+      var sumiram = antes.filter(function(t){ return dep.indexOf(t)<0; });
+      var partes = [];
+      if(novos.length) partes.push('anotou <b>'+esc(novos.join(', '))+'</b>');
+      if(sumiram.length) partes.push('removeu '+esc(sumiram.join(', ')));
+      return partes.length? partes.join(' e ') : lb+' revisadas';
+    }
+    if(def.tipo==='longo'){
+      if(para==null || para==='') return lb+' apagada';
+      var verbo = (de==null||de==='') ? 'registrou' : 'reescreveu';
+      return verbo+' '+lb+': <b>'+esc(corta(para,90))+'</b>';
+    }
+    if(de==null || de===''){
+      return lb+': <b>'+esc(valorLegivel(campo,para))+'</b>';
+    }
+    return lb+': <span class="de">'+esc(corta(valorLegivel(campo,de),40))+'</span> → <b>'+esc(corta(valorLegivel(campo,para),60))+'</b>';
   });
+}
+function mudancasTexto(m){ return frasesMudanca(m); }
+function frasesMudancaTexto(m){
+  return frasesMudanca(m).map(function(s){ return s.replace(/<[^>]+>/g,''); });
 }
 function resultadoLig(l){
   return l.atendida ? (l.efetiva?'Ligação atendida — efetiva':'Ligação atendida') : 'Ligação não atendida';
@@ -2093,19 +2168,39 @@ function tarefaFeita(key){
   save(); renderDash(); renderFech();
   pedirUndo(msg, snap);
 }
-var motivoKey = null;
+var motivoKey = null, motivoFilaId = null;
+function dispensarFila(id){
+  var c = db.clientes.find(function(x){return x.id===id;}); if(!c) return;
+  motivoFilaId = id; motivoKey = null;
+  document.getElementById('motivoQuem').textContent = nomeCli(c)+' — sai da fila de hoje';
+  document.getElementById('motivoTxt').value = '';
+  document.getElementById('ovMotivo').classList.add('show');
+}
 function tarefaNaoFeita(key){
-  motivoKey = key;
+  motivoKey = key; motivoFilaId = null;
   var e = achaEvento(key);
   document.getElementById('motivoQuem').textContent = e ? e.quem+' — '+e.oq : '';
   document.getElementById('motivoTxt').value = '';
   document.getElementById('ovMotivo').classList.add('show');
 }
-function fecharMotivo(){ motivoKey=null; document.getElementById('ovMotivo').classList.remove('show'); }
+function fecharMotivo(){ motivoKey=null; motivoFilaId=null; document.getElementById('ovMotivo').classList.remove('show'); }
 function confirmarMotivo(){
+  var motivo = document.getElementById('motivoTxt').value.trim();
+  if(motivoFilaId){
+    var snapF = tirarSnap();
+    var cF = db.clientes.find(function(x){return x.id===motivoFilaId;});
+    if(cF){
+      marcarFeito(cF.id);
+      logH('fila_dispensada','Dispensado da fila — '+nomeCli(cF)+' — '+cF.numero+(motivo?': '+motivo:' (sem motivo anotado)'), cF);
+      cF.atualizadoEm = Date.now();
+      save(cF);
+    }
+    fecharMotivo(); renderFila(); renderDash();
+    pedirUndo('Dispensado da fila: '+(cF?nomeCli(cF):''), snapF);
+    return;
+  }
   if(!motivoKey) return;
   var snap = tirarSnap();
-  var motivo = document.getElementById('motivoTxt').value.trim();
   var e = achaEvento(motivoKey);
   db.tarefas[motivoKey] = {status:'nao_feita', motivo:motivo, ts:Date.now()};
   db.pendentes = (db.pendentes||[]).filter(function(p){ return p.key!==motivoKey; });
@@ -2117,6 +2212,7 @@ function confirmarMotivo(){
   pedirUndo('Registrado como não feito', snap);
 }
 function ignorarMotivo(){
+  if(motivoFilaId){ fecharMotivo(); return; }
   if(!motivoKey) return;
   var snap = tirarSnap();
   db.tarefas[motivoKey] = {status:'ignorada', ts:Date.now()};
@@ -2540,6 +2636,7 @@ function textoCurto(h, c){
 var ICONES_HIST = {
   cliente_adicionado:'+', cliente_modificado:'✎', cliente_excluido:'✕',
   agendamento:'★', fechamento:'✔', primeira_visita:'⌂', contato:'☎', promessa:'!',
+  nao_compareceu:'✖', fila_dispensada:'–', lembrete_expirado:'–',
   tarefa_feita:'✓', tarefa_nao_feita:'✕', parcela_paga:'$', parcela_cobrada:'$',
   meta_batida:'★', meta_concluida:'★', relatorio_dia:'▤'
 };
@@ -2730,7 +2827,8 @@ function salvarFicha(){
     data: document.getElementById('cProxData').value,
     hora: document.getElementById('cProxHora').value,
     motivo: document.getElementById('cProxMotivo').value.trim(),
-    comigo: fichaBola
+    comigo: fichaBola,
+    expirado: false
   };
   var promTxt = document.getElementById('cPromessa').value.trim().slice(0,120);
   var promData = document.getElementById('cPromessaData').value;
@@ -2741,7 +2839,7 @@ function salvarFicha(){
   c.atualizadoEm = agora;
   var mudancas = antesVals ? diffRastreado(antesVals, valoresRastreados(c)) : [];
   if(novo) logH('cliente_adicionado','Adicionado '+nomeCli(c)+' — '+c.numero, c, tsEv);
-  else if(mudancas.length) logH('cliente_modificado','Modificado '+nomeCli(c)+' — '+c.numero, c, tsEv, mudancas);
+  else if(mudancas.length) logH('cliente_modificado', nomeCli(c)+' — '+c.numero, c, tsEv, mudancas);
   else if(novasLigs.length){
     logH('contato','Contato com '+nomeCli(c)+' — '+c.numero+': '+novasLigs.map(resultadoLig).join(', ')+' — sem mudança na ficha', c, tsEv);
   }
@@ -2754,6 +2852,8 @@ function salvarFicha(){
     logH('fechamento','Venda fechada para '+nomeCli(c)+' — '+c.numero+' — cota '+fmtMoney(c.fech?c.fech.cota:0), c, tsEv);
   if(catMudou && catK==='primeira_visita')
     logH('primeira_visita','Primeira visita de '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
+  if(catMudou && catK==='nao_compareceu')
+    logH('nao_compareceu','Não compareceu — '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
   if(!novo && c.proximo.data && c.proximo.data>hojeISO()) marcarFeito(c.id);
   save(c); fecharFicha(); renderList(); renderDash(); renderFech(); renderFila();
   pedirUndo((novo?'Cliente cadastrado: ':'Cliente salvo: ')+nomeCli(c), snapSalvar);
@@ -2969,7 +3069,10 @@ function importarJSON(){
     }
     c.atualizadoEm = agora;
     var mudJ = antesValsJ ? diffRastreado(antesValsJ, valoresRastreados(c)) : [];
-    if(existente){ atualizados++; logH('cliente_modificado','Modificado (JSON) '+nomeCli(c)+' — '+c.numero, c, tsEv, mudJ); }
+    if(existente){
+      atualizados++;
+      if(mudJ.length) logH('cliente_modificado', nomeCli(c)+' — '+c.numero, c, tsEv, mudJ);
+    }
     else { novos++; logH('cliente_adicionado','Adicionado (JSON) '+nomeCli(c)+' — '+c.numero, c, tsEv); }
     var promDepoisJ = c.promessa ? (c.promessa.texto||'')+'|'+(c.promessa.data||'') : '';
     if(promDepoisJ && promDepoisJ!==promAntesJ)
@@ -2980,6 +3083,8 @@ function importarJSON(){
       logH('fechamento','Venda fechada para '+nomeCli(c)+' — '+c.numero+' — cota '+fmtMoney(c.fech?c.fech.cota:0), c, tsEv);
     if(catMudou && catK==='primeira_visita')
       logH('primeira_visita','Primeira visita de '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
+    if(catMudou && catK==='nao_compareceu')
+      logH('nao_compareceu','Não compareceu — '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
   });
   save(); renderList(); renderDash();
   var msg = '';
@@ -3160,12 +3265,20 @@ function abrirFichaPorSid(sid){
   if(c) abrirFicha(c.id);
   else toast('Cliente não encontrado (pode ter sido excluído)');
 }
+var HIST_RUIDO = ['cliente_adicionado','cliente_modificado','contato','tarefa_feita','fila_dispensada','lembrete_expirado'];
+var histSoImportante = false;
+function alternaHistFiltro(){ histSoImportante = !histSoImportante; renderHist(); }
 function renderHist(){
   renderHistChips();
+  var bt = document.getElementById('btHistFiltro');
+  if(bt) bt.textContent = histSoImportante? 'Mostrando só o essencial' : 'Mostrando tudo';
   var iv = histIntervalo();
   var el = document.getElementById('listaHist');
   el.innerHTML = '<div class="empty">Carregando…</div>';
-  eventosPeriodo(iv[0], iv[1]).then(function(lista){ pintaHist(lista.slice().reverse(), el); })
+  eventosPeriodo(iv[0], iv[1]).then(function(lista){
+    if(histSoImportante) lista = lista.filter(function(x){ return HIST_RUIDO.indexOf(x.tipo)<0; });
+    pintaHist(lista.slice().reverse(), el);
+  })
     .catch(function(){ el.innerHTML = '<div class="empty">Não consegui abrir o histórico arquivado.</div>'; });
 }
 function pintaHist(hs, el){
@@ -3186,7 +3299,10 @@ function pintaHist(hs, el){
   }).join('') + (hs.length>400?'<div class="empty">Mostrando os 400 mais recentes de '+hs.length+'. Baixe o PDF pra ver tudo.</div>':'');
 }
 function limpaPdf(s){
-  return String(s==null?'':s).replace(/[—–]/g,'-').replace(/[·•]/g,'-').replace(/…/g,'...').replace(/[^\x20-\xFF]/g,'');
+  return String(s==null?'':s)
+    .replace(/[—–]/g,'-').replace(/[·•]/g,'-').replace(/…/g,'...')
+    .replace(/→/g,' -> ').replace(/[✓✔]/g,'ok').replace(/[✕✖]/g,'x')
+    .replace(/[^\x20-\xFF]/g,'').replace(/\s{2,}/g,' ');
 }
 function baixarPDF(){
   var iv = histIntervalo();
@@ -3197,103 +3313,236 @@ function baixarPDF(){
 }
 function montaPDF(iv, lista){
   var dias = (iv[1]-iv[0])/864e5;
-  var completo = dias <= 7.05;
-  var hs = lista.filter(function(h){ return completo || HIST_IMPORTANTES.indexOf(h.tipo)>=0; });
+  var detalhado = dias <= 8;
   var m = metricasIntervalo(iv[0], iv[1]);
-  var perdas = motivosPerda(iv[0], iv[1]);
   var porOri = origensIntervalo(iv[0], iv[1]);
-  var esfriando = carteiraEsfriando().length;
   var fs = fechamentosIntervalo(iv[0], iv[1]);
   var totalCotas = fs.reduce(function(a,c){ return a+((c.fech&&c.fech.cota)||0); },0);
   var deTxt = new Date(iv[0]).toLocaleDateString('pt-BR');
   var ateTxt = new Date(iv[1]).toLocaleDateString('pt-BR');
+
+  var DESTAQUES = ['fechamento','primeira_visita','nao_compareceu','agendamento','meta_batida','meta_concluida'];
+  var marcos = lista.filter(function(x){ return DESTAQUES.indexOf(x.tipo)>=0; });
+
+  function porDia(evs){
+    var mapa = {}, ordem = [];
+    evs.forEach(function(e){
+      var d = new Date(e.ts);
+      var k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(!mapa[k]){ mapa[k] = []; ordem.push(k); }
+      mapa[k].push(e);
+    });
+    ordem.sort();
+    return ordem.map(function(k){ return {dia:k, evs:mapa[k]}; });
+  }
+  function resumoDia(k){
+    var ini = new Date(k+'T00:00').getTime(), fim = new Date(k+'T23:59:59').getTime();
+    var md = metricasIntervalo(ini, fim);
+    var p = [];
+    if(md.lig) p.push(md.lig+' ligações ('+md.atend+' atendidas, '+md.efet+' efetivas)');
+    if(md.contatos) p.push(md.contatos+' contatos novos');
+    return p.join(' · ');
+  }
+  function frase(h){
+    var cli = h.sid!=null ? porSid(h.sid) : null;
+    var nome = cli ? nomeCli(cli) : '';
+    var num = cli ? cli.numero : (h.numero||'');
+    var quem = nome + (num? ' ('+num+')' : '');
+    if(h.tipo==='fechamento'){
+      var extra = cli&&cli.fech ? ' — cota '+fmtMoney(cli.fech.cota||0)+', comissão '+fmtMoney(Math.round((cli.fech.cota||0)*0.01)) : '';
+      return 'VENDA FECHADA: '+quem+extra;
+    }
+    if(h.tipo==='primeira_visita') return 'Compareceu na loja: '+quem+(cli&&cli.detalhe?' — '+corta(cli.detalhe,90):'');
+    if(h.tipo==='nao_compareceu') return 'Nao compareceu: '+quem+(cli&&cli.detalhe?' — '+corta(cli.detalhe,90):'');
+    if(h.tipo==='agendamento') return 'Agendou: '+quem+(cli&&cli.data?' para '+fmtDataFull(cli.data)+(cli.hora?' as '+cli.hora:''):'');
+    if(h.tipo==='meta_batida' || h.tipo==='meta_concluida') return h.texto;
+    if(h.tipo==='parcela_paga') return 'Parcela paga: '+quem;
+    if(h.tipo==='promessa') return quem+' ficou de: '+corta(h.texto.replace(/^Ficou de:\s*/,''),80);
+    if(h.tipo==='cliente_modificado'){
+      var fr = frasesMudancaTexto(h.m);
+      return fr.length? quem+' — '+fr.join('; ') : '';
+    }
+    if(h.tipo==='tarefa_nao_feita') return 'Nao feito: '+corta(h.texto.replace(/^Não feito:\s*/,''),110);
+    if(h.tipo==='relatorio_dia') return h.texto;
+    return '';
+  }
+
   function gerar(){
     var doc = new jspdf.jsPDF();
     var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
-    var y = 18;
-    doc.setFont('helvetica','bold'); doc.setFontSize(17);
-    doc.text('Relatório — Painel de Vendas', 14, y); y+=7;
-    doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
-    doc.text('Vendedor: '+VENDEDOR+'   |   Período: '+deTxt+' a '+ateTxt+(completo?'':'   |   (só eventos importantes)'), 14, y); y+=9;
-    function secao(titulo, linhas){
-      if(y > H-40){ doc.addPage(); y = 16; }
-      doc.setFont('helvetica','bold'); doc.setFontSize(12);
-      doc.text(titulo, 14, y); y+=6;
-      doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
-      linhas.forEach(function(l){
-        if(y > H-16){ doc.addPage(); y = 16; }
-        doc.text(limpaPdf(l), 14, y); y+=5.6;
-      });
-      y+=4;
+    var ME = 15, y = 0;
+    function novaPagina(){ doc.addPage(); y = 18; }
+    function espaco(n){ if(y + n > H-16) novaPagina(); }
+    function titulo(t){
+      espaco(16); y += 4;
+      doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(20,20,20);
+      doc.text(limpaPdf(t), ME, y); y += 2.5;
+      doc.setDrawColor(205,205,205); doc.setLineWidth(0.3); doc.line(ME, y, W-ME, y);
+      y += 6;
     }
-    secao('Funil do período', [
-      'Contatos: '+m.contatos,
-      'Negociação: '+m.neg+'  ('+fmtPct(m.txNeg)+' dos contatos)',
-      'Agendados: '+m.agd+'  ('+fmtPct(pct(m.agd,m.neg))+' das negociações)',
-      'Confirmados: '+m.conf+'  ('+fmtPct(m.txConf)+' dos agendados)',
-      'Compareceram: '+m.comp+'  ('+fmtPct(m.txComp)+' dos confirmados)',
-      'Vendas: '+m.vendas+'  ('+fmtPct(m.txVenda)+' dos que foram)'
+    function linha(t, negrito, recuo){
+      espaco(7);
+      doc.setFont('helvetica', negrito?'bold':'normal'); doc.setFontSize(10);
+      doc.setTextColor(negrito?20:60, negrito?20:60, negrito?20:60);
+      var w = doc.splitTextToSize(limpaPdf(t), W-ME*2-(recuo||0));
+      if(y + w.length*4.8 > H-16) novaPagina();
+      doc.text(w, ME+(recuo||0), y);
+      y += w.length*4.8 + 1;
+    }
+    function encolhe(txt, largura, negrito){
+      doc.setFont('helvetica', negrito?'bold':'normal');
+      var s = limpaPdf(txt);
+      while(s.length>4 && doc.getTextWidth(s) > largura) s = s.slice(0, -2)+'.';
+      return s;
+    }
+    function colunas(pares, umaCol){
+      doc.setFontSize(10);
+      var nCol = umaCol?1:2;
+      var col = (W-ME*2)/nCol;
+      var larguraVal = col*0.46, larguraLb = col*0.46;
+      for(var i=0;i<pares.length;i+=nCol){
+        espaco(8);
+        for(var k=0;k<nCol && i+k<pares.length;k++){
+          var x = ME + col*k;
+          doc.setTextColor(110,110,110);
+          doc.text(encolhe(pares[i+k][0], larguraLb, false), x, y);
+          doc.setTextColor(20,20,20);
+          doc.text(encolhe(pares[i+k][1], larguraVal, true), x+col-6, y, {align:'right'});
+        }
+        y += 6.2;
+      }
+      y += 2;
+    }
+
+    // cabeçalho
+    y = 20;
+    doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(20,20,20);
+    doc.text('Relatorio de vendas', ME, y); y += 7;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(110,110,110);
+    doc.text(limpaPdf(VENDEDOR+'   |   '+deTxt+' a '+ateTxt+'   |   '+(detalhado?'relatorio detalhado':'visao geral do periodo')), ME, y);
+    y += 4;
+    doc.setDrawColor(20,20,20); doc.setLineWidth(0.8); doc.line(ME, y, W-ME, y); y += 9;
+
+    // o que importa
+    titulo('Resultado do periodo');
+    colunas([
+      ['Vendas fechadas', String(m.vendas)],
+      ['Cotas vendidas', fmtMoney(totalCotas)],
+      ['Compareceram', m.comp+' de '+m.agd+(pct(m.comp,m.agd)!=null?' ('+pct(m.comp,m.agd)+'%)':'')],
+      ['Comissao', fmtMoney(Math.round(totalCotas*0.01))]
     ]);
-    secao('Ligações', [
-      'Feitas: '+m.lig+'   |   Atendidas: '+m.atend+'   |   Efetivas: '+m.efet,
-      'Taxa de atendimento: '+fmtPct(m.txAtend)+'   |   Efetivas/atendidas: '+fmtPct(m.txEfet),
-      'Agendou sobre efetivas: '+fmtPct(m.txAgdEfet)
+
+    titulo('Como foi o trabalho');
+    colunas([
+      ['Ligacoes feitas', String(m.lig)],
+      ['Contatos novos', String(m.contatos)],
+      ['Atendidas', m.atend+(m.txAtend!=null?' ('+m.txAtend+'%)':'')],
+      ['Efetivas', m.efet+(m.txEfet!=null?' ('+m.txEfet+'%)':'')],
+      ['Agendamentos', String(m.agd)],
+      ['Agendou / efetivas', fmtPct(m.txAgdEfet)],
+      ['Ligacoes / agendamento', m.ligPorAgd==null?'-':m.ligPorAgd.toFixed(1)],
+      ['Ligacoes / venda', m.ligPorVenda==null?'-':m.ligPorVenda.toFixed(1)]
     ]);
-    secao('Esforço', [
-      'Ligações por agendamento: '+(m.ligPorAgd==null?'—':m.ligPorAgd.toFixed(1)),
-      'Ligações por venda: '+(m.ligPorVenda==null?'—':m.ligPorVenda.toFixed(1)),
-      'Dias até agendar: '+(m.diasAteAgd==null?'—':m.diasAteAgd.toFixed(1)),
-      'Dias até fechar: '+(m.diasAteVenda==null?'—':m.diasAteVenda.toFixed(1))
-    ]);
-    secao('Dinheiro', [
-      'Cotas vendidas: '+fmtMoney(totalCotas)+'   |   Comissão: '+fmtMoney(Math.round(totalCotas*0.01)),
-      'Ticket médio: '+(m.ticket==null?'—':fmtMoney(m.ticket))+'   |   Comissão média: '+(m.comMedia==null?'—':fmtMoney(m.comMedia)),
-      'Valor por ligação: '+(m.porLigacao==null?'—':fmtMoney(Math.round(m.porLigacao)))
-    ]);
-    secao('Origem dos leads', porOri.length? porOri.map(function(o){
-      return o.lb+': '+o.contatos+' lead(s), '+o.agd+' agendado(s) ('+fmtPct(o.txAgd)+'), '+o.vendas+' venda(s)';
-    }) : ['Nenhum lead no período.']);
-    secao('Pontos de atenção', [
-      'No-show: '+m.noShow+'   |   Carteira esfriando: '+esfriando,
-      'Sem retorno: '+perdas.sem_retorno+'   |   Desinteressados: '+perdas.desinteressado,
-      'Desconfiados: '+perdas.desconfiado+'   |   Quer à vista: '+perdas.quer_a_vista
-    ]);
-    doc.setFont('helvetica','bold'); doc.setFontSize(12);
-    doc.text('Histórico ('+hs.length+' eventos)', 14, y); y+=7;
-    doc.setFontSize(9.5);
-    hs.forEach(function(h){
-      var t = HIST_TIPOS[h.tipo]||{lb:h.tipo};
-      var d = new Date(h.ts);
-      var linha = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+'  ['+t.lb+']  '+h.texto;
-      linha = limpaPdf(linha);
-      var wrapped = doc.splitTextToSize(linha, W-28);
-      if(y + wrapped.length*4.6 > H-14){ doc.addPage(); y = 16; }
-      doc.text(wrapped, 14, y);
-      y += wrapped.length*4.6 + 1.6;
-    });
-    if(!hs.length){ doc.setFont('helvetica','normal'); doc.text('Nada registrado neste período.', 14, y); }
+
+    if(fs.length){
+      titulo('Vendas do periodo');
+      fs.forEach(function(c){
+        var f = c.fech||{};
+        linha((c.nome||'(sem nome)')+' — '+c.numero, true);
+        linha('Cota '+fmtMoney(f.cota||0)+'   |   comissao '+fmtMoney(f.comissao!=null?f.comissao:Math.round((f.cota||0)*0.01))+
+              (f.contemplacao?'   |   contemplacao '+fmtDataFull(f.contemplacao):'')+
+              (f.parcela?'   |   parcela '+fmtMoney(f.parcela)+(f.totalParc?' ('+(f.parcPagas||0)+'/'+f.totalParc+' pagas)':''):''), false, 4);
+        y += 1.5;
+      });
+    }
+
+    if(porOri.length){
+      titulo('De onde vieram os leads');
+      colunas(porOri.map(function(o){
+        return [o.lb, o.contatos+' leads · '+o.agd+' agend. · '+o.vendas+' vendas'];
+      }), true);
+    }
+
+    if(detalhado){
+      titulo('Dia a dia');
+      var relevantes = lista.filter(function(x){
+        if(DESTAQUES.indexOf(x.tipo)>=0) return true;
+        if(x.tipo==='promessa' || x.tipo==='tarefa_nao_feita' || x.tipo==='parcela_paga') return true;
+        if(x.tipo==='cliente_modificado' && x.m && x.m.length) return true;
+        return false;
+      });
+      var dias2 = porDia(relevantes);
+      var todosDias = {};
+      dias2.forEach(function(d){ todosDias[d.dia] = d.evs; });
+      var chaves = Object.keys(todosDias).sort();
+      if(!chaves.length) linha('Nenhum movimento relevante neste periodo.');
+      chaves.forEach(function(k){
+        espaco(14);
+        doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(20,20,20);
+        var dd = new Date(k+'T12:00');
+        doc.text(limpaPdf(dd.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'2-digit'})), ME, y);
+        y += 5;
+        var res = resumoDia(k);
+        if(res){ doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(120,120,120); doc.text(limpaPdf(res), ME, y); y += 5; }
+        todosDias[k].forEach(function(h2){
+          var t = frase(h2);
+          if(t) linha('- '+t, false, 3);
+        });
+        y += 3;
+      });
+    }else{
+      titulo('Marcos do periodo');
+      if(!marcos.length) linha('Nenhum agendamento, comparecimento ou venda registrado.');
+      porDia(marcos).forEach(function(d){
+        var dd = new Date(d.dia+'T12:00');
+        espaco(10);
+        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(20,20,20);
+        doc.text(limpaPdf(dd.toLocaleDateString('pt-BR')), ME, y); y += 5;
+        d.evs.forEach(function(h2){
+          var t = frase(h2);
+          if(t) linha('- '+t, false, 3);
+        });
+        y += 2;
+      });
+    }
+
+    var totalPg = doc.internal.getNumberOfPages();
+    for(var pg=1; pg<=totalPg; pg++){
+      doc.setPage(pg);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(150,150,150);
+      doc.text(limpaPdf(VENDEDOR+' — '+deTxt+' a '+ateTxt), ME, H-8);
+      doc.text(pg+'/'+totalPg, W-ME, H-8, {align:'right'});
+    }
     doc.save('relatorio-'+VENDEDOR.toLowerCase()+'-'+hojeISO()+'.pdf');
     toast('PDF baixado');
   }
+
   function printFallback(){
     var w = window.open('','_blank');
     if(!w){ toast('Habilite pop-ups pra gerar o PDF'); return; }
-    var html = '<html><head><title>Relatório — '+VENDEDOR+'</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:20px}h2{font-size:15px;margin-top:18px}p,li{font-size:12.5px;line-height:1.5}.tag{font-weight:bold}</style></head><body>'+
-      '<h1>Relatório — Painel de Vendas</h1>'+
-      '<p>Vendedor: '+VENDEDOR+' | Período: '+deTxt+' a '+ateTxt+(completo?'':' | (só eventos importantes)')+'</p>'+
-      '<h2>Resumo do período</h2>'+
-      '<p>Ligações: '+m.lig+' | Atendidas: '+m.atend+' | Contatos: '+m.contatos+'<br>'+
-      'Agendamentos: '+m.agd+' | Negociações: '+m.neg+' | Vendas: '+m.vendas+'<br>'+
-      'Cotas vendidas: '+fmtMoney(totalCotas)+' | Comissão: '+fmtMoney(Math.round(totalCotas*0.01))+'</p>'+
-      '<h2>Histórico ('+hs.length+' eventos)</h2><ul>'+
-      hs.map(function(h){
-        var t = HIST_TIPOS[h.tipo]||{lb:h.tipo};
-        var d = new Date(h.ts);
-        return '<li>'+d.toLocaleDateString('pt-BR')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' <span class="tag">['+t.lb+']</span> '+esc(h.texto)+'</li>';
-      }).join('')+'</ul>'+
-      '<scr'+'ipt>window.print()</scr'+'ipt></body></html>';
+    var evs = detalhado ? lista.filter(function(x){ return frase(x); }) : marcos;
+    var html = '<html><head><meta charset="utf-8"><title>Relatorio — '+VENDEDOR+'</title>'+
+      '<style>body{font-family:Arial,sans-serif;padding:28px;color:#111;max-width:760px}h1{font-size:21px;margin:0}'+
+      '.sub{color:#777;font-size:12px;margin:6px 0 18px}h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;'+
+      'border-bottom:1px solid #ccc;padding-bottom:5px;margin:22px 0 10px}.kv{display:flex;justify-content:space-between;'+
+      'font-size:13px;padding:4px 0}.kv span{color:#777}.kv b{color:#111}li{font-size:12.5px;line-height:1.55}</style></head><body>'+
+      '<h1>Relatorio de vendas</h1><div class="sub">'+VENDEDOR+' &nbsp;|&nbsp; '+deTxt+' a '+ateTxt+'</div>'+
+      '<h2>Resultado do periodo</h2>'+
+      '<div class="kv"><span>Vendas fechadas</span><b>'+m.vendas+'</b></div>'+
+      '<div class="kv"><span>Cotas vendidas</span><b>'+fmtMoney(totalCotas)+'</b></div>'+
+      '<div class="kv"><span>Comissao</span><b>'+fmtMoney(Math.round(totalCotas*0.01))+'</b></div>'+
+      '<div class="kv"><span>Compareceram</span><b>'+m.comp+' de '+m.agd+'</b></div>'+
+      '<h2>Como foi o trabalho</h2>'+
+      '<div class="kv"><span>Ligacoes</span><b>'+m.lig+'</b></div>'+
+      '<div class="kv"><span>Atendidas / efetivas</span><b>'+m.atend+' / '+m.efet+'</b></div>'+
+      '<div class="kv"><span>Agendamentos</span><b>'+m.agd+'</b></div>'+
+      '<h2>'+(detalhado?'Dia a dia':'Marcos do periodo')+'</h2><ul>'+
+      evs.map(function(x){ var t = frase(x); if(!t) return ''; 
+        return '<li>'+new Date(x.ts).toLocaleDateString('pt-BR')+' — '+esc(t)+'</li>'; }).join('')+
+      '</ul><scr'+'ipt>window.print()</scr'+'ipt></body></html>';
     w.document.write(html); w.document.close();
   }
+
   if(typeof jspdf!=='undefined') gerar();
   else{
     var s = document.createElement('script');
@@ -3388,6 +3637,7 @@ function iniciar(){
   selOrigens('dashOrig','Todas as origens');
   selEquipe(); renderEquipe();
   renderPeriod(); relogio(); renderDash(); renderList(); trocaTab('fila');
+  expirarPendencias();
   renderAvisos();
   ligarVoltar();
   if(mudou) flushCompleto();
