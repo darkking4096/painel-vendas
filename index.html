@@ -95,8 +95,10 @@ header.top h1 span{color:var(--amber)}
 .tabs button.on{color:var(--amber)}
 .tabs .tico{display:block; width:20px; height:20px; margin:0 auto 3px}
 .tabs .tico svg{display:block; width:100%; height:100%}
-.overlay{position:fixed; inset:0; background:var(--bg); z-index:40; overflow-y:auto; display:none}
+.overlay{position:fixed; inset:0; background:var(--bg); z-index:40; overflow-y:auto; overflow-x:hidden;
+  display:none; overscroll-behavior:contain; -webkit-overflow-scrolling:touch}
 .overlay.show{display:block}
+body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
 .overlay .inner{max-width:640px; margin:0 auto; padding:16px 16px 40px}
 .ovhead{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px}
 .ovhead h2{font-family:var(--disp); font-size:20px; font-weight:600; text-transform:uppercase; letter-spacing:.05em}
@@ -187,9 +189,11 @@ header.top h1 span{color:var(--amber)}
 .fn .fb i{display:block; height:100%; border-radius:999px}
 .fn .fp{font-size:11px; color:var(--tx3); width:142px; flex-shrink:0; text-align:right; white-space:nowrap; overflow:hidden}
 .fn .fp b{color:var(--tx2); font-weight:600; font-size:12px}
-.listtbl td.wa a{color:var(--green); font-weight:600; text-decoration:none; border:1px solid rgba(76,217,100,.4); border-radius:7px; padding:3px 9px; font-size:11.5px}
-.listtbl td{white-space:normal}
-.listtbl .cel{max-width:230px; font-size:12px; color:var(--tx2)}
+.lcard{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px}
+.lc1{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+.lcard .lnome{font-size:15.5px; font-weight:600; min-width:0; overflow-wrap:anywhere}
+.lcard .ltel{display:inline-block; font-size:15px; color:var(--blue); text-decoration:none; font-weight:500; margin-top:6px; padding:4px 0; min-height:32px}
+.lcard .lcarro{font-size:13px; color:var(--tx2); margin-top:2px}
 .parcprog{background:var(--card2); border:1px solid var(--border2); border-radius:10px; padding:10px 12px; margin-top:12px}
 .parcprog .pt{display:flex; align-items:center; justify-content:space-between; gap:10px}
 .parcprog .pv{font-family:var(--disp); font-size:19px; font-weight:600}
@@ -607,16 +611,15 @@ header.top h1 span{color:var(--amber)}
 </div>
 
 <div class="overlay" id="ovLista">
-  <div class="inner" style="max-width:1100px">
+  <div class="inner">
     <div class="ovhead">
       <h2>Lista de clientes</h2>
-      <div style="display:flex; gap:8px">
-        <button class="iconbtn" onclick="baixarLista()">Baixar planilha</button>
-        <button class="iconbtn" onclick="document.getElementById('ovLista').classList.remove('show')">Fechar</button>
-      </div>
+      <button class="iconbtn" onclick="document.getElementById('ovLista').classList.remove('show')">Fechar</button>
     </div>
-    <div id="listaResumo" style="font-size:12.5px; color:var(--tx2); margin:6px 0 12px"></div>
-    <div class="tblwrap"><table class="tbl listtbl" id="tblLista"></table></div>
+    <div id="listaResumo" style="font-size:12.5px; color:var(--tx2); margin:6px 0 4px"></div>
+    <button class="btn save" onclick="copiarLista()">Copiar lista</button>
+    <div style="font-size:12px; color:var(--tx2); margin-top:8px">Cola pronta pro WhatsApp. Os números viram link sozinhos — é só tocar pra ligar.</div>
+    <div id="listaCards" style="margin-top:16px"></div>
   </div>
 </div>
 
@@ -1187,7 +1190,32 @@ function migrar(){
 /* ======== BOTÃO VOLTAR E TECLADO ======== */
 var nModais = 0, ignorarPop = false;
 function overlaysAbertos(){ return document.querySelectorAll('.overlay.show'); }
+var zModal = 40, scrollGuardado = 0;
+function arrumaPilha(){
+  var abertos = overlaysAbertos();
+  abertos.forEach(function(o){
+    if(!o.dataset.z){ zModal += 2; o.dataset.z = zModal; o.style.zIndex = zModal; }
+  });
+  document.querySelectorAll('.overlay').forEach(function(o){
+    if(!o.classList.contains('show') && o.dataset.z){ delete o.dataset.z; o.style.zIndex = ''; }
+  });
+  if(!abertos.length) zModal = 40;
+  travarFundo(abertos.length>0);
+}
+function travarFundo(travar){
+  var body = document.body;
+  if(travar && !body.classList.contains('travado')){
+    scrollGuardado = window.scrollY || document.documentElement.scrollTop || 0;
+    body.style.top = (-scrollGuardado)+'px';
+    body.classList.add('travado');
+  }else if(!travar && body.classList.contains('travado')){
+    body.classList.remove('travado');
+    body.style.top = '';
+    window.scrollTo(0, scrollGuardado);
+  }
+}
 function sincronizaModais(){
+  arrumaPilha();
   var n = overlaysAbertos().length;
   if(n > nModais){
     for(var i=nModais; i<n; i++) history.pushState({modal:i+1}, '');
@@ -1439,8 +1467,9 @@ function abrirRapido(id, snap){
   document.getElementById('rapMotivo').value = p.motivo||'';
   if(sug && !p.data) rapidoBola = sug.comigo;
   renderRapBola();
-  document.getElementById('ovRapido').classList.add('show');
-  window.scrollTo(0,0);
+  var ovR = document.getElementById('ovRapido');
+  ovR.classList.add('show');
+  ovR.scrollTop = 0;
 }
 function renderRapBola(){
   document.getElementById('rapBola').innerHTML =
@@ -2322,132 +2351,74 @@ function renderList(){
 /* ======== LISTA / PLANILHA POR FILTRO ======== */
 function telWa(num){ var n = soDigitos(num); return n.length<=11 ? '55'+n : n; }
 function simNao(v){ return v===true?'Sim':(v===false?'Não':'—'); }
-function reqResumo(c){
-  var r = (c.info&&c.info.requisitos)||{};
-  var partes = [];
-  if(r.entrada_tem!=null || r.entrada_precisa!=null){
-    var p = (r.entrada_tem!=null && r.entrada_precisa) ? ' ('+Math.round(Math.min(r.entrada_tem/r.entrada_precisa,1)*100)+'%)' : '';
-    partes.push('Entrada '+(r.entrada_tem!=null?fmtMoney(r.entrada_tem):'?')+' de '+(r.entrada_precisa!=null?fmtMoney(r.entrada_precisa):'?')+p);
-  }
-  partes.push('Em mãos: '+simNao(r.entrada_em_maos));
-  partes.push('Interesse: '+simNao(r.interesse));
-  partes.push('Tempo: '+simNao(r.tempo));
-  partes.push('Prioridade: '+simNao(r.prioridade));
-  return partes.join(' · ');
-}
-function situacaoTxt(c){
-  var s = c.detalhe||'';
-  if(c.data) s = (s?s+' — ':'')+'Data: '+fmtDataFull(c.data)+(c.hora?' '+c.hora:'');
-  if(c.categoria==='fechou' && c.fech) s = (s?s+' — ':'')+'Cota '+fmtMoney(c.fech.cota||0)+(c.fech.contemplacao?', contemplação '+fmtDataFull(c.fech.contemplacao):'');
-  return s;
+function telFormatado(num){
+  var n = soDigitos(num);
+  if(n.length===11) return '+55 '+n.slice(0,2)+' '+n.slice(2,7)+'-'+n.slice(7);
+  if(n.length===10) return '+55 '+n.slice(0,2)+' '+n.slice(2,6)+'-'+n.slice(6);
+  if(n.length>11 && n.indexOf('55')===0) return '+'+n;
+  return num;
 }
 function ordenaLista(cs){
   return cs.slice().sort(function(a,b){ return tsContato(b)-tsContato(a); });
 }
 function dadosLista(){
   return ordenaLista(clientesFiltrados()).map(function(c){
-    var r = (c.info&&c.info.requisitos)||{};
     return {
       c: c,
-      ID: c.sid,
-      Nome: c.nome||'(sem nome)',
-      Telefone: c.numero,
-      WhatsApp: 'https://wa.me/'+telWa(c.numero),
-      Origem: origemLb(c),
-      Anuncio: c.anuncio||'',
-      Veiculo: c.veiculo||'',
-      ValorVeiculo: c.valorVeiculo!=null?c.valorVeiculo:'',
-      Categoria: (CATS[c.categoria]||{lb:c.categoria}).lb,
-      Situacao: situacaoTxt(c),
-      Nota: (c.info&&c.info.nota)||'',
-      Problemas: (c.info&&c.info.problemas)||'',
-      EntradaTem: r.entrada_tem!=null?r.entrada_tem:'',
-      EntradaPrecisa: r.entrada_precisa!=null?r.entrada_precisa:'',
-      EmMaos: simNao(r.entrada_em_maos),
-      Interesse: simNao(r.interesse),
-      Tempo: simNao(r.tempo),
-      Prioridade: simNao(r.prioridade),
-      Contato: c.dataContato?fmtDataFull(c.dataContato):''
+      nome: c.nome || '',
+      tel: telFormatado(c.numero),
+      carro: c.veiculo || '',
+      categoria: (CATS[c.categoria]||{lb:c.categoria}).lb
     };
   });
+}
+function tituloLista(){
+  var nomePer = (PERIODOS.find(function(p){return p[0]===cliPeriodo;})||['',''])[1];
+  var fc = document.getElementById('fCat').value;
+  var fo = document.getElementById('fOrig').value;
+  var partes = [nomePer];
+  if(fc) partes.push(CATS[fc].lb);
+  if(fo) partes.push(fo.indexOf('rep:')===0 ? 'Repasse — '+fo.slice(4) : (ORIGENS[fo]||{lb:fo}).lb);
+  return partes.join(' · ');
 }
 function abrirLista(){
   var rows = dadosLista();
-  var nomePer = (PERIODOS.find(function(p){return p[0]===cliPeriodo;})||['','']) [1];
-  var fc = document.getElementById('fCat').value;
-  document.getElementById('listaResumo').textContent =
-    rows.length+' cliente(s) · Período: '+nomePer+(fc?' · Categoria: '+CATS[fc].lb:'')+' · Do contato mais recente pro mais antigo';
-  var el = document.getElementById('tblLista');
-  if(!rows.length){ el.innerHTML = '<tbody><tr><td class="empty" style="border:none">Nenhum cliente com esses filtros.</td></tr></tbody>'; }
-  else{
-    var head = '<thead><tr><th>ID</th><th>Nome</th><th>Telefone</th><th></th><th>Origem</th><th>Anúncio</th><th>Categoria</th><th>Situação</th><th>Nota</th><th>Tem</th><th>Precisa</th><th>Em mãos</th><th>Interesse</th><th>Tempo</th><th>Prioridade</th><th>Contato</th></tr></thead>';
-    var body = rows.map(function(r){
-      return '<tr>'+
-        '<td style="color:var(--tx3)">#'+r.ID+'</td>'+
-        '<td style="font-weight:600; cursor:pointer" onclick="abrirFicha(\''+r.c.id+'\')">'+esc(r.Nome)+'</td>'+
-        '<td><a href="tel:+'+telWa(r.Telefone)+'" style="color:var(--blue); text-decoration:none">'+esc(r.Telefone)+'</a></td>'+
-        '<td class="wa"><a href="'+r.WhatsApp+'" target="_blank" rel="noopener">WhatsApp</a></td>'+
-        '<td>'+esc(r.Origem)+'</td>'+
-        '<td class="cel">'+esc(r.Anuncio)+'</td>'+
-        '<td>'+esc(r.Categoria)+'</td>'+
-        '<td class="cel">'+esc(r.Situacao)+'</td>'+
-        '<td class="cel">'+esc(r.Nota)+'</td>'+
-        '<td>'+(r.EntradaTem!==''?fmtMoney(r.EntradaTem):'—')+'</td>'+
-        '<td>'+(r.EntradaPrecisa!==''?fmtMoney(r.EntradaPrecisa):'—')+'</td>'+
-        '<td'+(r.EmMaos==='Sim'?' style="color:var(--green); font-weight:600"':'')+'>'+r.EmMaos+'</td>'+
-        '<td>'+r.Interesse+'</td><td>'+r.Tempo+'</td><td>'+r.Prioridade+'</td>'+
-        '<td>'+r.Contato+'</td></tr>';
+  document.getElementById('listaResumo').textContent = rows.length+' cliente(s) · '+tituloLista();
+  var el = document.getElementById('listaCards');
+  if(!rows.length){
+    el.innerHTML = '<div class="empty">Nenhum cliente com esses filtros. Mude o período ou a categoria na tela de Clientes.</div>';
+  }else{
+    el.innerHTML = rows.map(function(r){
+      var cat = CATS[r.c.categoria]||{lb:r.categoria, cor:'gray'};
+      var cor = CORES[cat.cor];
+      return '<div class="lcard">'+
+        '<div class="lc1">'+
+          '<div class="lnome">'+esc(r.nome || '(sem nome)')+'</div>'+
+          '<span class="pill" style="color:'+cor+'; background:'+cor+'22; border:1px solid '+cor+'55">'+cat.lb+'</span>'+
+        '</div>'+
+        '<a class="ltel" href="tel:'+soDigitos(r.c.numero)+'">'+esc(r.tel)+'</a>'+
+        (r.carro?'<div class="lcarro">'+esc(r.carro)+'</div>':'')+
+      '</div>';
     }).join('');
-    el.innerHTML = head+'<tbody>'+body+'</tbody>';
   }
   document.getElementById('ovLista').classList.add('show');
-  window.scrollTo(0,0);
 }
-function baixarLista(){
+function textoLista(){
   var rows = dadosLista();
-  if(!rows.length){ toast('Nenhum cliente pra exportar'); return; }
-  var planilha = rows.map(function(r){
-    return {
-      'ID': r.ID, 'Nome': r.Nome, 'Telefone': r.Telefone, 'WhatsApp': 'Abrir conversa',
-      'Origem': r.Origem, 'Anúncio': r.Anuncio, 'Veículo': r.Veiculo, 'Valor do veículo': r.ValorVeiculo,
-      'Categoria': r.Categoria, 'Situação': r.Situacao, 'Nota': r.Nota, 'Problemas': r.Problemas,
-      'Entrada que tem': r.EntradaTem, 'Entrada que precisa': r.EntradaPrecisa, 'Entrada em mãos': r.EmMaos,
-      'Interesse': r.Interesse, 'Tempo': r.Tempo, 'Prioridade': r.Prioridade, 'Data do contato': r.Contato
-    };
+  var linhas = ['CLIENTES — '+fmtDataFull(hojeISO()), tituloLista()+' · '+rows.length+' cliente(s)', ''];
+  rows.forEach(function(r, i){
+    var topo = (i+1)+') '+(r.nome || '(sem nome)') + (r.carro? ' · '+r.carro : '');
+    linhas.push(topo);
+    linhas.push(r.tel);
+    linhas.push(r.categoria);
+    linhas.push('');
   });
-  function comXLSX(){
-    var ws = XLSX.utils.json_to_sheet(planilha);
-    ws['!cols'] = [{wch:6},{wch:22},{wch:15},{wch:16},{wch:20},{wch:26},{wch:18},{wch:16},{wch:20},{wch:44},{wch:44},{wch:44},{wch:16},{wch:18},{wch:14},{wch:11},{wch:9},{wch:11},{wch:14}];
-    rows.forEach(function(r,i){
-      var cell = XLSX.utils.encode_cell({c:4, r:i+1});
-      ws[cell] = {t:'s', v:'Abrir conversa', l:{Target:r.WhatsApp, Tooltip:'WhatsApp '+r.Telefone}};
-    });
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
-    XLSX.writeFile(wb, 'clientes-'+cliPeriodo+'-'+hojeISO()+'.xlsx');
-    toast('Planilha baixada');
-  }
-  function csvFallback(){
-    var cols = Object.keys(planilha[0]);
-    var csv = '\uFEFF'+cols.join(';')+'\n'+planilha.map(function(r,i){
-      return cols.map(function(k){
-        var v = k==='WhatsApp' ? rows[i].WhatsApp : r[k];
-        return '"'+String(v).replace(/"/g,'""')+'"';
-      }).join(';');
-    }).join('\n');
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-    a.download = 'clientes-'+hojeISO()+'.csv';
-    a.click();
-    toast('Planilha baixada (CSV — abre no Excel)');
-  }
-  if(typeof XLSX!=='undefined') comXLSX();
-  else{
-    var s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = comXLSX; s.onerror = csvFallback;
-    document.head.appendChild(s);
-  }
+  return linhas.join('\n').trim();
+}
+function copiarLista(){
+  var rows = dadosLista();
+  if(!rows.length){ toast('Nenhum cliente pra copiar'); return; }
+  copiarTexto(textoLista(), rows.length+' cliente(s) copiados');
 }
 
 /* ======== FICHA ======== */
@@ -2561,8 +2532,9 @@ function abrirFicha(id){
   renderPromAlerta(c);
   renderProxAviso();
   renderTgls(); renderDados(); viewEntrada(); atualizaCond(); renderLigInfo();
-  document.getElementById('ovFicha').classList.add('show');
-  window.scrollTo(0,0);
+  var ov = document.getElementById('ovFicha');
+  ov.classList.add('show');
+  ov.scrollTop = 0;
 }
 function fecharFicha(){ document.getElementById('ovFicha').classList.remove('show'); }
 var fichaBola = true;
