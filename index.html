@@ -233,7 +233,8 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
 .fcard{position:relative}
 .fcard .fdisp{position:absolute; top:6px; right:6px; width:34px; height:34px; border-radius:9px; background:none; border:1px solid var(--border2); color:var(--tx3); font-size:13px; line-height:1; padding:0; z-index:2}
 .fcard .fdisp::after{content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:44px; height:44px}
-.fcard .fq{padding-right:40px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; cursor:pointer}
+.fcard .fok{right:46px; color:var(--green); border-color:rgba(76,217,100,.45); font-size:15px}
+.fcard .fq{padding-right:88px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; cursor:pointer}
 .fcard .fnm{font-size:15.5px; font-weight:600}
 .fcard .fnum{font-size:13px; color:var(--tx2); margin-top:1px}
 .fcard .fmot{font-size:13px; color:var(--tx); margin-top:7px; line-height:1.4}
@@ -358,7 +359,7 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
     </div>
     <div class="bigcards">
       <div class="bigcard cotas"><div class="lb">Cotas vendidas</div><div class="num" id="bcCotas">R$ 0</div></div>
-      <div class="bigcard com"><div class="lb">Comissão</div><div class="num" id="bcCom">R$ 0</div></div>
+      <div class="bigcard com"><div class="lb">Comissão</div><div class="num" id="bcCom">R$ 0</div><div class="sub" id="bcComSub"></div></div>
     </div>
     <div class="metacard" id="metaCard"></div>
     <div class="dgrid">
@@ -452,7 +453,11 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
 
     <div id="paneFicha">
     <label>Número (WhatsApp) <span class="req">*</span></label>
-    <input id="cNumero" inputmode="tel" placeholder="31 9 9999-0000">
+    <div style="display:flex; gap:8px; align-items:stretch">
+      <input id="cNumero" inputmode="tel" placeholder="31 9 9999-0000">
+      <button type="button" class="iconbtn" title="Abrir conversa no WhatsApp" onclick="abrirWaFicha()"
+        style="flex:0 0 52px; color:var(--green); border-color:rgba(76,217,100,.45); font-size:17px; min-height:44px">✆</button>
+    </div>
     <label>Nome</label>
     <input id="cNome" placeholder="Nome do cliente">
     <label>Origem do lead</label>
@@ -500,6 +505,13 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
         <label>Representante (quem atendeu com você) <span class="req">*</span></label>
         <input id="cRep" placeholder="Nome do líder / representante">
       </div>
+      <div id="condCancel" style="display:none">
+        <div class="reqrow" style="margin-top:14px">
+          <div class="rlb">Comissão estornada<div style="font-size:11.5px; color:var(--tx3); font-weight:400">o dinheiro da comissão voltou?</div></div>
+          <div class="tgl" id="tglEstorno"></div>
+        </div>
+        <div id="estornoDica" style="font-size:12px; color:var(--tx2); margin-top:7px"></div>
+      </div>
       <div id="condFech" style="display:none">
         <div class="row2">
           <div><label>Cota — crédito liberado (R$) <span class="req">*</span></label><input id="cCota" inputmode="numeric" placeholder="80000" oninput="viewComissao()"></div>
@@ -513,11 +525,15 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
           <div><label>Senha do aplicativo</label><input id="cSenha" placeholder="Senha de acesso"></div>
         </div>
         <div class="row2">
-          <div><label>Valor da parcela (R$)</label><input id="cParcela" inputmode="numeric" placeholder="890"></div>
+          <div><label>Valor da parcela (R$)</label><input id="cParcela" inputmode="numeric" placeholder="890" oninput="viewComParc()"></div>
           <div><label>Vence todo dia</label><input id="cVenceDia" inputmode="numeric" placeholder="10"></div>
         </div>
-        <label>Total de parcelas do plano</label>
-        <input id="cTotalParc" inputmode="numeric" placeholder="60">
+        <div class="row2">
+          <div><label>Total de parcelas do plano</label><input id="cTotalParc" inputmode="numeric" placeholder="60"></div>
+          <div><label>Assembleia todo dia</label><input id="cAssembDia" inputmode="numeric" placeholder="15"></div>
+        </div>
+        <div style="font-size:12px; color:var(--tx2); margin-top:6px">No dia da assembleia a agenda pergunta se ele foi contemplado. Se não saiu, ele volta sozinho no mês seguinte.</div>
+        <div class="comview" id="comParcView" style="display:none"></div>
         <div class="parcprog" id="parcProg"></div>
       </div>
     </div>
@@ -645,8 +661,11 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
     </div>
     <label>Meta de faturamento em cotas (R$)</label>
     <input id="metaAlvo" inputmode="numeric" placeholder="100000">
-    <label>Prazo (até quando)</label>
-    <input type="date" id="metaFim">
+    <div class="row2">
+      <div><label>Começa em</label><input type="date" id="metaIni"></div>
+      <div><label>Termina em</label><input type="date" id="metaFim"></div>
+    </div>
+    <div style="font-size:12px; color:var(--tx2); margin-top:6px">Só as vendas fechadas dentro desse período contam pra essa meta. A comissão das parcelas não entra aqui — a meta é de cotas.</div>
     <button class="btn save" onclick="salvarMeta()">Salvar meta</button>
     <button class="btn del" id="btnRmMeta" style="display:none" onclick="removerMeta()">Remover meta</button>
   </div>
@@ -723,7 +742,8 @@ var CATS = {
   reagendado_confirmado:{lb:'Reagendado confirmado', cor:'teal',  extra:'d'},
   nao_compareceu:     {lb:'Não compareceu',         cor:'red',    extra:'t',  q:'O que houve? Por que ele não veio?'},
   primeira_visita:    {lb:'Primeira visita',        cor:'blue',   extra:'tr', q:'Situação: por que veio e não fechou?'},
-  fechou:             {lb:'Fechou',                 cor:'green',  extra:'f'}
+  fechou:             {lb:'Fechou',                 cor:'green',  extra:'f'},
+  cancelou:           {lb:'Cancelou',               cor:'red',    extra:'tf', q:'Por que cancelou? O que ele alegou?'}
 };
 var CAT_MIGRA = {ver_carro:'negociando', negocio_pendente:'negociando',
   acompanhar_distancia:'negociando', acompanhar_agenda:'negociando',
@@ -736,7 +756,7 @@ var ET_AGENDADO   = ['agendamento_inicial','confirmado','reagendado','reagendado
 var ET_CONFIRMADO = ['confirmado','reagendado_confirmado','primeira_visita','fechou'];
 var ET_COMPARECEU = ['primeira_visita','fechou'];
 var ET_VENDA      = ['fechou'];
-var PERDA_CATS = ['sem_retorno','desinteressado','desconfiado','quer_a_vista'];
+var PERDA_CATS = ['sem_retorno','desinteressado','desconfiado','quer_a_vista','cancelou'];
 var ORIGENS = {
   facebook:  {lb:'Facebook',            cor:'blue',   dica:'Veio de anúncio de veículo. Costuma vir com nome, carro, valor e entrada já definidos.'},
   instagram: {lb:'Instagram',           cor:'purple', dica:'Chegou direto no WhatsApp. Quase sempre quer parcelamento — pode vir sem nome.'},
@@ -763,9 +783,14 @@ var HIST_TIPOS = {
   lead_encerrado:{lb:'Lead encerrado', cor:'gray'},
   nao_compareceu:{lb:'Não compareceu', cor:'red'},
   fila_dispensada:{lb:'Dispensado da fila', cor:'gray'},
-  lembrete_expirado:{lb:'Lembrete expirado', cor:'gray'}
+  lembrete_expirado:{lb:'Lembrete expirado', cor:'gray'},
+  /* novos tipos SEMPRE no fim desta lista: a posição vira índice no histórico arquivado */
+  fila_ok:{lb:'Resolvido na fila', cor:'green'},
+  assembleia:{lb:'Assembleia', cor:'purple'},
+  contemplado:{lb:'Contemplado', cor:'green'},
+  cancelamento:{lb:'Cancelamento', cor:'red'}
 };
-var SEM_PROXIMO = ['sem_retorno','desinteressado','fechou'];
+var SEM_PROXIMO = ['sem_retorno','desinteressado','fechou','cancelou'];
 var SUGESTOES = {
   desconfiado:    {dias:1,  comigo:true},
   negociando:     {dias:2,  comigo:true},
@@ -795,9 +820,11 @@ var CAMPOS_RASTREADOS = {
   parc:  {lb:'valor da parcela',     tipo:'dinheiro'},
   pagas: {lb:'parcelas pagas',       tipo:'texto'},
   contem:{lb:'contemplação',         tipo:'data'},
+  asm:   {lb:'dia da assembleia',    tipo:'texto'},
+  est:   {lb:'comissão estornada',   tipo:'simnao'},
   dados: {lb:'informações',          tipo:'lista'}
 };
-var HIST_IMPORTANTES = ['agendamento','fechamento','primeira_visita','nao_compareceu','meta_batida','meta_concluida','relatorio_dia','parcela_paga'];
+var HIST_IMPORTANTES = ['agendamento','fechamento','primeira_visita','nao_compareceu','meta_batida','meta_concluida','relatorio_dia','parcela_paga','contemplado','cancelamento'];
 
 /* ======== ARMAZENAMENTO COMPACTO ======== */
 var HIST_ORDEM = Object.keys(HIST_TIPOS);
@@ -1170,6 +1197,13 @@ function migrar(){
     if(c.obs && !c.info.problemas){ c.info.problemas = c.obs; delete c.obs; mudou = true; }
     if(!c.origem){ c.origem = 'outros'; mudou = true; }
     if(c.fech && c.fech.parcPagas==null){ c.fech.parcPagas = 0; mudou = true; }
+    if(c.fech && !c.fech.pgs){
+      /* parcelas antigas não tinham data: entram retroativas pelo dia do vencimento,
+         nunca todas no dia de hoje */
+      c.fech.pgs = [];
+      ajustaPgs(c.fech, c.fech.parcPagas||0, Date.now(), true);
+      mudou = true;
+    }
     if(!c.proximo){
       if(c.lembrete || c.lemData){
         c.proximo = {data:c.lemData||'', hora:c.lemHora||'', motivo:c.lembrete||'', comigo:true};
@@ -1179,6 +1213,11 @@ function migrar(){
     }
     if(c.proximo.comigo==null){ c.proximo.comigo = true; mudou = true; }
   });
+  if(db.meta && !db.meta.ini){
+    var tIni = db.metaBase || db.meta.inicio || 0;
+    db.meta.ini = tIni ? isoDeTs(tIni) : hojeISO();
+    mudou = true;
+  }
   if(!db.fila || db.fila.dia!==hojeISO()) db.fila = {dia:hojeISO(), feitos:[]};
   if(!db.equipe) db.equipe = [];
   if(!db.pendentes) db.pendentes = [];
@@ -1289,6 +1328,7 @@ function tsDeData(iso){
   var t = new Date(iso+'T12:00').getTime();
   return isNaN(t)?Date.now():t;
 }
+function isoDeTs(ts){ var d=new Date(ts); if(isNaN(d)) return hojeISO(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtData(iso){ if(!iso) return ''; var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0].slice(2); }
 function fmtDataFull(iso){ if(!iso) return ''; var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function fmtMoney(v){ return 'R$ '+Number(v||0).toLocaleString('pt-BR'); }
@@ -1425,6 +1465,7 @@ function renderFila(){
         '<div class="fnum">'+esc(c.numero)+'</div></div>'+
         '<span class="pill" style="color:'+cor+'; background:'+cor+'22; border:1px solid '+cor+'55">'+cat.lb+'</span>'+
       '</div>'+
+      '<button class="fdisp fok" title="Já resolvi — tirar da fila de hoje" onclick="event.stopPropagation(); filaFeito(\''+c.id+'\')">✓</button>'+
       '<button class="fdisp" title="Dispensar hoje" onclick="event.stopPropagation(); dispensarFila(\''+c.id+'\')">✕</button>'+
       '<div class="fmot">'+motivo+'</div>'+
       '<div class="fmeta"><b>'+sem+'</b> dia(s) sem contato · <b>'+ligs+'</b> toque(s), '+atend+' atendida(s) · '+atrasoTxt+'</div>'+
@@ -1501,6 +1542,15 @@ function salvarRapido(){
   pedirUndo(nomeCli(c)+' — próximo contato em '+fmtData(data), rapidoSnap);
   rapidoSnap = null;
 }
+function filaFeito(id){
+  var c = db.clientes.find(function(x){return x.id===id;}); if(!c) return;
+  var snap = tirarSnap();
+  marcarFeito(c.id);
+  logH('fila_ok','Resolvido na fila — '+nomeCli(c)+' — '+c.numero, c);
+  c.atualizadoEm = Date.now();
+  save(c); renderFila(); renderDash();
+  pedirUndo(nomeCli(c)+' — resolvido, saiu da fila de hoje', snap);
+}
 function marcarFeito(id){
   if(!db.fila || db.fila.dia!==hojeISO()) db.fila = {dia:hojeISO(), feitos:[]};
   if(db.fila.feitos.indexOf(id)<0) db.fila.feitos.push(id);
@@ -1533,6 +1583,8 @@ function valoresRastreados(c){
     cota: f.cota!=null?f.cota:null, parc: f.parcela!=null?f.parcela:null,
     pagas: f.parcPagas!=null?String(f.parcPagas)+(f.totalParc?'/'+f.totalParc:''):null,
     contem: f.contemplacao||null,
+    asm: f.assembDia!=null?String(f.assembDia):null,
+    est: sn(f.estornada),
     dados: (inf.dados||[]).map(function(d){ return d.titulo; }).join(', ')||null
   };
 }
@@ -1686,11 +1738,13 @@ function casaOrigem(c, filtro){
 }
 
 /* ======== PARCELAS / PÓS-VENDA ======== */
-function proximoVencISO(c){
-  var f = c.fech; if(!f || !f.venceDia) return null;
-  if(f.totalParc && (f.parcPagas||0) >= f.totalParc) return null;
-  var dia = Math.min(31, Math.max(1, Number(f.venceDia)));
-  var n = new Date(); n.setHours(0,0,0,0);
+function proximoDiaMesISO(diaMes, desdeISO){
+  /* próxima vez que cai o dia X do mês, a partir de desdeISO (padrão: hoje) */
+  var dia = Math.min(31, Math.max(1, Number(diaMes)));
+  if(!dia) return null;
+  var n = desdeISO ? new Date(desdeISO+'T00:00') : new Date();
+  if(isNaN(n)) n = new Date();
+  n.setHours(0,0,0,0);
   for(var k=0; k<3; k++){
     var y = n.getFullYear(), mo = n.getMonth()+k;
     var ult = new Date(y, mo+1, 0).getDate();
@@ -1698,6 +1752,76 @@ function proximoVencISO(c){
     if(d.getTime() >= n.getTime()) return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   }
   return null;
+}
+function proximoVencISO(c){
+  var f = c.fech; if(!f || !f.venceDia) return null;
+  if(c.categoria==='cancelou') return null;
+  if(f.totalParc && (f.parcPagas||0) >= f.totalParc) return null;
+  return proximoDiaMesISO(f.venceDia);
+}
+/* ======== ASSEMBLEIA E COMISSÕES ======== */
+function proximaAssembleiaISO(c){
+  var f = c.fech;
+  if(!f || !f.assembDia) return null;
+  if(f.contemplacao) return null;
+  if(c.categoria==='cancelou') return null;
+  /* asmVista = última assembleia que você já respondeu; a próxima vem depois dela */
+  var base = hojeISO();
+  if(f.asmVista && f.asmVista >= base){
+    var d = new Date(f.asmVista+'T12:00');
+    if(!isNaN(d)){ d.setDate(d.getDate()+1); base = isoDeTs(d.getTime()); }
+  }
+  return proximoDiaMesISO(f.assembDia, base);
+}
+function primeiraAssembleiaISO(c){
+  /* a 1ª assembleia depois do fechamento — usada só pra sugerir se a comissão estorna */
+  var f = c.fech; if(!f || !f.assembDia) return null;
+  var t = primeiraEntrada(c,['fechou']) || c.criadoEm || 0;
+  if(!t) return null;
+  return proximoDiaMesISO(f.assembDia, isoDeTs(t));
+}
+function estornou(c){ return c.categoria==='cancelou' && !!(c.fech && c.fech.estornada); }
+function comissaoCota(c){
+  var f = c.fech||{};
+  if(estornou(c)) return 0;
+  return f.comissao!=null ? f.comissao : Math.round((f.cota||0)*0.01);
+}
+function comissaoParcelas(c, ini, fim){
+  var f = c.fech||{};
+  var valor = f.parcela||0;
+  if(!valor || estornou(c)) return 0;
+  var n;
+  if(ini==null) n = f.parcPagas||0;
+  else{
+    var pgs = f.pgs||[];
+    n = pgs.filter(function(t){ return t>=ini && t<=fim; }).length;
+  }
+  return Math.round(valor*n*0.01);
+}
+function comissaoTotalCliente(c){ return comissaoCota(c)+comissaoParcelas(c, null, null); }
+function datasPassadasParcelas(f, n, refTs){
+  /* n datas mensais pra trás, a partir do vencimento mais recente que já passou.
+     Serve pra parcela que já estava paga antes de existir registro — não pode
+     cair toda no dia de hoje e inflar a comissão do dia. */
+  var out = [];
+  var base = new Date(refTs||Date.now()); base.setHours(12,0,0,0);
+  var dia = f.venceDia ? Math.min(28, Math.max(1, Number(f.venceDia))) : base.getDate();
+  var d = new Date(base.getFullYear(), base.getMonth(), Math.min(dia,28), 12, 0, 0, 0);
+  if(d.getTime() > base.getTime()) d.setMonth(d.getMonth()-1);
+  for(var i=0;i<n;i++){ out.unshift(d.getTime()); d.setMonth(d.getMonth()-1); }
+  return out;
+}
+function ajustaPgs(f, alvo, ts, retro){
+  /* mantém a lista de datas de pagamento do mesmo tamanho que parcPagas */
+  if(!f.pgs) f.pgs = [];
+  alvo = Math.max(0, alvo||0);
+  var faltam = alvo - f.pgs.length;
+  if(faltam > 0){
+    if(retro || faltam > 1) f.pgs = datasPassadasParcelas(f, faltam, ts).concat(f.pgs);
+    else f.pgs.push(ts||Date.now());
+  }
+  while(f.pgs.length > alvo) f.pgs.pop();
+  f.parcPagas = alvo;
 }
 function textoCobranca(c){
   var venc = proximoVencISO(c);
@@ -1725,6 +1849,7 @@ function renderParcProg(){
     '<div class="pv">'+pagas+' <small>de '+(total||'?')+(total?' ('+p+'%)':'')+'</small></div></div>'+
     '<div class="pbtns"><button type="button" onclick="ajustaParcela(-1)">−</button><button type="button" onclick="ajustaParcela(1)">+</button></div></div>'+
     '<div class="bar"><i style="width:'+p+'%"></i></div>'+
+    (c && proximaAssembleiaISO(c) ? '<div class="nx">Próxima assembleia: '+fmtDataFull(proximaAssembleiaISO(c))+'.</div>' : '')+
     (venc?'<div class="nx">Próximo vencimento: '+fmtDataFull(venc)+'. Você é lembrado 14 dias antes.</div>':
       (c&&f.totalParc&&pagas>=f.totalParc?'<div class="nx">Plano quitado 🎉</div>':'<div class="nx">Informe o dia do vencimento pra ativar os lembretes.</div>'));
 }
@@ -1732,13 +1857,15 @@ function ajustaParcela(delta){
   if(!editId){ toast('Salve o cliente primeiro'); return; }
   var c = db.clientes.find(function(x){return x.id===editId;}); if(!c) return;
   if(!c.fech) c.fech = {};
+  if(!c.fech.pgs) c.fech.pgs = [];
   var snap = tirarSnap();
-  var novo = Math.max(0, (c.fech.parcPagas||0) + delta);
+  var atual = c.fech.parcPagas||0;
+  var novo = Math.max(0, atual + delta);
   if(c.fech.totalParc) novo = Math.min(novo, c.fech.totalParc);
-  c.fech.parcPagas = novo;
+  ajustaPgs(c.fech, novo, Date.now());
   c.atualizadoEm = Date.now();
   logH('parcela_paga', (delta>0?'Parcela registrada':'Parcela removida')+' — '+nomeCli(c)+' — '+c.numero+' ('+novo+(c.fech.totalParc?'/'+c.fech.totalParc:'')+')', c);
-  save(c); renderParcProg(); renderFech();
+  save(c); renderParcProg(); viewComParc(); renderFech();
   pedirUndo('Parcelas de '+nomeCli(c)+': '+novo, snap);
 }
 
@@ -1817,9 +1944,10 @@ function metricasIntervalo(ini, fim, cs){
       if(l.ts>=ini && l.ts<=fim){ lig++; if(l.atendida){ atend++; if(l.efetiva) efet++; } }
     });
   });
-  var contatos=0, neg=0, agd=0, conf=0, comp=0, vendas=0;
+  var contatos=0, neg=0, agd=0, conf=0, comp=0, vendas=0, vendasV=0, comParc=0;
   var somaDiasAgd=0, nAgd=0, somaDiasVenda=0, nVenda=0, totalCota=0;
   cs.forEach(function(c){
+    comParc += comissaoParcelas(c, ini, fim);
     var tc = tsContato(c);
     if(tc>=ini && tc<=fim) contatos++;
     if(passouEm(c, NEG_CATS, ini, fim)) neg++;
@@ -1828,7 +1956,7 @@ function metricasIntervalo(ini, fim, cs){
     if(passouEm(c, ET_COMPARECEU, ini, fim)) comp++;
     if(passouEm(c, ET_VENDA, ini, fim)){
       vendas++;
-      totalCota += (c.fech&&c.fech.cota)||0;
+      if(!estornou(c)){ vendasV++; totalCota += (c.fech&&c.fech.cota)||0; }
     }
     var ta = primeiraEntrada(c, ET_AGENDADO);
     if(ta>0 && ta>=ini && ta<=fim && tc>0 && ta>=tc){ somaDiasAgd += (ta-tc)/864e5; nAgd++; }
@@ -1838,16 +1966,16 @@ function metricasIntervalo(ini, fim, cs){
   var comissao = Math.round(totalCota*0.01);
   return {
     lig:lig, atend:atend, efet:efet, contatos:contatos, neg:neg,
-    agd:agd, conf:conf, comp:comp, vendas:vendas,
-    totalCota:totalCota, comissao:comissao,
+    agd:agd, conf:conf, comp:comp, vendas:vendas, vendasV:vendasV,
+    totalCota:totalCota, comissao:comissao, comParc:comParc, comTotal:comissao+comParc,
     txAtend: pct(atend,lig), txEfet: pct(efet,atend), txAgdEfet: pct(agd,efet),
     txNeg: pct(neg,contatos), txConf: pct(conf,agd), txComp: pct(comp,conf), txVenda: pct(vendas,comp),
     ligPorAgd: agd>0? (lig/agd) : null,
     ligPorVenda: vendas>0? (lig/vendas) : null,
     diasAteAgd: nAgd>0? (somaDiasAgd/nAgd) : null,
     diasAteVenda: nVenda>0? (somaDiasVenda/nVenda) : null,
-    ticket: vendas>0? Math.round(totalCota/vendas) : null,
-    comMedia: vendas>0? Math.round(comissao/vendas) : null,
+    ticket: vendasV>0? Math.round(totalCota/vendasV) : null,
+    comMedia: vendasV>0? Math.round(comissao/vendasV) : null,
     porLigacao: lig>0? (comissao/lig) : null,
     noShow: (function(){
       var n=0;
@@ -1896,9 +2024,10 @@ function carteiraEsfriando(){
 
 function fechamentosIntervalo(ini, fim){
   return db.clientes.filter(function(c){
-    if(c.categoria!=='fechou') return false;
+    /* cancelado só sai da conta se a comissão foi estornada */
+    if(c.categoria!=='fechou' && !(c.categoria==='cancelou' && !estornou(c))) return false;
     var t = primeiraEntrada(c,['fechou']);
-    return t>=ini && t<=fim;
+    return t>0 && t>=ini && t<=fim;
   });
 }
 
@@ -1947,7 +2076,8 @@ function renderDash(){
   document.getElementById('kpiDin').innerHTML =
     kpi('Ticket médio', m.ticket==null?'—':fmtMoney(m.ticket), 'cota por venda', 'blue money')+
     kpi('Comissão média', m.comMedia==null?'—':fmtMoney(m.comMedia), 'por venda', 'good money')+
-    kpi('Valor por ligação', m.porLigacao==null?'—':fmtMoney(Math.round(m.porLigacao)), 'comissão / ligação', 'good money');
+    kpi('Comissão de parcelas', fmtMoney(m.comParc), '1% das parcelas pagas', 'teal money')+
+    kpi('Valor por ligação', m.porLigacao==null?'—':fmtMoney(Math.round(m.porLigacao)), 'comissão de cota / ligação', 'good money');
 
   var perdas = motivosPerda(ini, fim, cs);
   var esfriando = carteiraEsfriando();
@@ -1958,7 +2088,8 @@ function renderDash(){
     kpi('Sem retorno', perdas.sem_retorno, 'no período')+
     kpi('Desinteressados', perdas.desinteressado, 'no período')+
     kpi('Desconfiados', perdas.desconfiado, 'no período')+
-    kpi('Quer à vista', perdas.quer_a_vista, 'no período');
+    kpi('Quer à vista', perdas.quer_a_vista, 'no período')+
+    kpi('Cancelaram', perdas.cancelou, 'depois de fechar', perdas.cancelou?'bad':'');
 
   var porOri = origensIntervalo(ini, fim, cs);
   document.getElementById('kpiOrig').innerHTML = porOri.map(function(o){
@@ -1981,7 +2112,8 @@ function renderDash(){
   }).join('');
 
   document.getElementById('bcCotas').textContent = fmtMoney(m.totalCota);
-  document.getElementById('bcCom').textContent = fmtMoney(m.comissao);
+  document.getElementById('bcCom').textContent = fmtMoney(m.comTotal);
+  document.getElementById('bcComSub').textContent = 'cota '+fmtMoney(m.comissao)+' · parcelas '+fmtMoney(m.comParc);
   renderMeta();
   renderAgenda();
 }
@@ -1997,7 +2129,11 @@ function renderMeta(){
   var prog = progressoMeta();
   var pct = db.meta.alvo? Math.min(100, Math.round(prog/db.meta.alvo*100)) : 0;
   var vencida = db.meta.fim && db.meta.fim < hojeISO();
-  el.innerHTML = '<div class="mh"><div><div class="lb">Meta até '+fmtDataFull(db.meta.fim)+(vencida?' <span style="color:var(--red)">— prazo vencido, edite a data</span>':'')+'</div>'+
+  var naoComecou = db.meta.ini && db.meta.ini > hojeISO();
+  var periodoTxt = (db.meta.ini? fmtData(db.meta.ini)+' a ' : 'até ')+fmtDataFull(db.meta.fim);
+  el.innerHTML = '<div class="mh"><div><div class="lb">Meta '+periodoTxt+
+    (vencida?' <span style="color:var(--red)">— prazo vencido, edite a data</span>':'')+
+    (naoComecou?' <span style="color:var(--tx3)">— começa '+fmtData(db.meta.ini)+'</span>':'')+'</div>'+
     '<div class="mnum">'+fmtMoney(prog)+' <small>de '+fmtMoney(db.meta.alvo)+' ('+pct+'%)</small></div></div>'+
     '<button class="iconbtn" onclick="abrirMeta()">Editar</button></div>'+
     '<div class="mbar"><i style="width:'+pct+'%"></i></div>';
@@ -2010,24 +2146,28 @@ function renderMeta(){
 }
 function progressoMeta(){
   if(!db.meta) return 0;
+  var iniTs = db.meta.ini ? new Date(db.meta.ini+'T00:00').getTime() : (db.metaBase||0);
   var fimTs = db.meta.fim ? new Date(db.meta.fim+'T23:59:59').getTime() : Infinity;
-  var fs = fechamentosIntervalo(db.metaBase||0, fimTs);
+  var fs = fechamentosIntervalo(iniTs, fimTs);
   return fs.reduce(function(a,c){ return a+((c.fech&&c.fech.cota)||0); },0);
 }
 function abrirMeta(){
   document.getElementById('metaAlvo').value = db.meta? db.meta.alvo : '';
+  document.getElementById('metaIni').value = db.meta? (db.meta.ini||hojeISO()) : hojeISO();
   document.getElementById('metaFim').value = db.meta? (db.meta.fim||'') : '';
   document.getElementById('btnRmMeta').style.display = db.meta? '' : 'none';
   document.getElementById('ovMeta').classList.add('show');
 }
 function salvarMeta(){
   var alvo = Number(soDigitos(document.getElementById('metaAlvo').value));
+  var ini = document.getElementById('metaIni').value || hojeISO();
   var fim = document.getElementById('metaFim').value;
   if(!alvo){ toast('Informe o valor da meta'); return; }
   if(!fim){ toast('Informe o prazo'); return; }
+  if(fim < ini){ toast('O fim não pode ser antes do começo — confira as datas'); return; }
   if(fim < hojeISO()){ toast('O prazo já passou — confira a data (e o ano)'); return; }
-  if(db.meta){ db.meta.alvo = alvo; db.meta.fim = fim; db.meta.celebrada = progressoMeta()>=alvo && db.meta.celebrada; }
-  else db.meta = {alvo:alvo, fim:fim, inicio:Date.now(), celebrada:false};
+  if(db.meta){ db.meta.alvo = alvo; db.meta.ini = ini; db.meta.fim = fim; db.meta.celebrada = progressoMeta()>=alvo && db.meta.celebrada; }
+  else db.meta = {alvo:alvo, ini:ini, fim:fim, inicio:Date.now(), celebrada:false};
   save(); document.getElementById('ovMeta').classList.remove('show'); renderDash(); toast('Meta salva');
 }
 function removerMeta(){
@@ -2120,6 +2260,12 @@ function compromissos(){
         var tc = new Date(c.fech.contemplacao+'T09:00').getTime();
         if(!isNaN(tc)) evs.push({ts:tc, quem:nome, oq:'Contemplação — cota '+fmtMoney(c.fech.cota||0), id:c.id, key:c.id+'|cont|'+c.fech.contemplacao});
       }
+      var asm = proximaAssembleiaISO(c);
+      if(asm){
+        var tasm = new Date(asm+'T09:00').getTime();
+        if(!isNaN(tasm)) evs.push({ts:tasm, quem:nome, oq:'Assembleia — foi contemplado?', id:c.id,
+                                   key:c.id+'|asm|'+asm, assembleia:true, asmData:asm});
+      }
       var venc = proximoVencISO(c);
       if(venc){
         var tv = new Date(venc+'T09:00').getTime();
@@ -2157,8 +2303,8 @@ function renderAgenda(){
       '<div><div class="who">'+esc(e.quem)+'</div><div class="what">'+esc(e.oq)+'</div></div></div></div>'+
       '<div class="agbtns">'+
       (e.cobranca?'<button title="Mandar cobrança no WhatsApp" style="color:var(--green)" onclick="abrirCobranca(\''+e.id+'\')">✆</button>':'')+
-      '<button class="ok" title="Feito" onclick="tarefaFeita(\''+e.key+'\')">✓</button>'+
-      '<button class="no" title="Não feito" onclick="tarefaNaoFeita(\''+e.key+'\')">✕</button>'+
+      '<button class="ok" title="'+(e.assembleia?'Foi contemplado':'Feito')+'" onclick="tarefaFeita(\''+e.key+'\')">✓</button>'+
+      '<button class="no" title="'+(e.assembleia?'Não saiu — concorre na próxima':'Não feito')+'" onclick="tarefaNaoFeita(\''+e.key+'\')">✕</button>'+
       '</div></div>';
   }).join('');
 }
@@ -2174,11 +2320,20 @@ function tarefaFeita(key){
   var msg = 'Tarefa concluída';
   if(e){
     var c = db.clientes.find(function(x){return x.id===e.id;});
+    if(e.assembleia && c){
+      if(!c.fech) c.fech = {};
+      c.fech.contemplacao = e.asmData || hojeISO();
+      c.atualizadoEm = Date.now();
+      logH('contemplado','Contemplado na assembleia — '+nomeCli(c)+' — '+c.numero+' — cota '+fmtMoney(c.fech.cota||0), c);
+      save(c); renderDash(); renderFech();
+      pedirUndo('Contemplado! '+nomeCli(c), snap);
+      return;
+    }
     if(e.confirmaParcela && c){
       if(!c.fech) c.fech = {};
       var novo = (c.fech.parcPagas||0)+1;
       if(c.fech.totalParc) novo = Math.min(novo, c.fech.totalParc);
-      c.fech.parcPagas = novo;
+      ajustaPgs(c.fech, novo, Date.now());
       c.atualizadoEm = Date.now();
       db.pendentes = (db.pendentes||[]).filter(function(p){ return p.key!==key; });
       logH('parcela_paga','Parcela paga por '+nomeCli(c)+' — '+c.numero+' ('+novo+(c.fech.totalParc?'/'+c.fech.totalParc:'')+') — '+fmtMoney(c.fech.parcela||0), c);
@@ -2208,6 +2363,18 @@ function dispensarFila(id){
 function tarefaNaoFeita(key){
   motivoKey = key; motivoFilaId = null;
   var e = achaEvento(key);
+  if(e && e.assembleia){
+    /* não foi sorteado: não é tarefa esquecida, é resultado da assembleia — concorre na próxima */
+    var snapA = tirarSnap();
+    var cA = db.clientes.find(function(x){return x.id===e.id;});
+    db.tarefas[key] = {status:'nao_feita', motivo:'não foi sorteado', ts:Date.now()};
+    if(cA && cA.fech){ cA.fech.asmVista = e.asmData || hojeISO(); cA.atualizadoEm = Date.now(); }
+    if(cA) logH('assembleia','Não foi sorteado na assembleia de '+(e.asmData?fmtDataFull(e.asmData):'—')+' — '+nomeCli(cA)+' — '+cA.numero+'. Concorre na próxima.', cA);
+    motivoKey = null;
+    save(); renderDash();
+    pedirUndo((cA?nomeCli(cA):'Cliente')+' não foi sorteado — concorre na próxima', snapA);
+    return;
+  }
   document.getElementById('motivoQuem').textContent = e ? e.quem+' — '+e.oq : '';
   document.getElementById('motivoTxt').value = '';
   document.getElementById('ovMotivo').classList.add('show');
@@ -2457,6 +2624,49 @@ function viewEntrada(){
 function viewComissao(){
   var cota = Number(soDigitos(document.getElementById('cCota').value));
   document.getElementById('comView').innerHTML = 'Comissão (1%): <b>'+fmtMoney(Math.round(cota*0.01))+'</b> — calculada sozinha.';
+  viewComParc();
+}
+function viewComParc(){
+  var el = document.getElementById('comParcView');
+  if(!el) return;
+  var parcela = Number(soDigitos(document.getElementById('cParcela').value));
+  var c = editId ? db.clientes.find(function(x){return x.id===editId;}) : null;
+  var pagas = (c && c.fech && c.fech.parcPagas) || 0;
+  if(!parcela || !pagas){ el.style.display='none'; return; }
+  el.style.display = '';
+  el.innerHTML = 'Comissão das parcelas (1%): <b>'+fmtMoney(Math.round(parcela*pagas*0.01))+'</b> — '+pagas+' parcela(s) paga(s).';
+}
+function abrirWaFicha(){
+  var n = soDigitos(document.getElementById('cNumero').value);
+  if(n.length<10){ toast('Número incompleto'); return; }
+  window.open('https://wa.me/'+telWa(n), '_blank', 'noopener');
+}
+var fichaEstorno = null;
+function renderEstorno(){
+  var el = document.getElementById('tglEstorno');
+  if(!el) return;
+  el.innerHTML =
+    '<button type="button" class="sim'+(fichaEstorno===true?' on':'')+'" onclick="setEstorno(true)">Sim</button>'+
+    '<button type="button" class="nao'+(fichaEstorno===false?' on':'')+'" onclick="setEstorno(false)">Não</button>';
+}
+function setEstorno(v){ fichaEstorno = (fichaEstorno===v)?null:v; renderEstorno(); dicaEstorno(); }
+function sugestaoEstorno(c){
+  /* estorna se cancelou antes da 1ª assembleia depois do fechamento */
+  if(!c || !c.fech) return null;
+  if(c.fech.contemplacao) return false;
+  var pa = primeiraAssembleiaISO(c);
+  if(!pa) return null;
+  return hojeISO() < pa;
+}
+function dicaEstorno(){
+  var el = document.getElementById('estornoDica');
+  if(!el) return;
+  var c = editId ? db.clientes.find(function(x){return x.id===editId;}) : null;
+  var pa = c ? primeiraAssembleiaISO(c) : null;
+  var base = pa ? '1ª assembleia dele foi/é em '+fmtDataFull(pa)+'. ' : 'Preencha o dia da assembleia pra eu conseguir sugerir. ';
+  el.innerHTML = base + (fichaEstorno===true ? 'Marcado como <b>estornada</b>: essa venda sai das cotas, da comissão e da meta.'
+    : fichaEstorno===false ? 'Marcado como <b>não estornada</b>: a comissão continua contando normalmente.'
+    : 'Antes da 1ª assembleia a comissão volta; depois, não.');
 }
 function renderDados(){
   var el = document.getElementById('listaDados');
@@ -2508,6 +2718,9 @@ function abrirFicha(id){
   document.getElementById('cParcela').value = f.parcela!=null?f.parcela:'';
   document.getElementById('cVenceDia').value = f.venceDia!=null?f.venceDia:'';
   document.getElementById('cTotalParc').value = f.totalParc!=null?f.totalParc:'';
+  document.getElementById('cAssembDia').value = f.assembDia!=null?f.assembDia:'';
+  fichaEstorno = (f.estornada===true||f.estornada===false) ? f.estornada : null;
+  renderEstorno();
   viewComissao(); renderParcProg();
   var inf = (c&&c.info)||{requisitos:{},dados:[]};
   var r = inf.requisitos||{};
@@ -2609,6 +2822,7 @@ var ICONES_HIST = {
   cliente_adicionado:'+', cliente_modificado:'✎', cliente_excluido:'✕',
   agendamento:'★', fechamento:'✔', primeira_visita:'⌂', contato:'☎', promessa:'!',
   nao_compareceu:'✖', fila_dispensada:'–', lembrete_expirado:'–',
+  fila_ok:'✓', assembleia:'◇', contemplado:'★', cancelamento:'✕',
   tarefa_feita:'✓', tarefa_nao_feita:'✕', parcela_paga:'$', parcela_cobrada:'$',
   meta_batida:'★', meta_concluida:'★', relatorio_dia:'▤'
 };
@@ -2719,6 +2933,12 @@ function atualizaCond(){
   document.getElementById('condData').style.display = temD?'':'none';
   document.getElementById('condRep').style.display = temR?'':'none';
   document.getElementById('condFech').style.display = temF?'':'none';
+  var ehCancel = k==='cancelou';
+  document.getElementById('condCancel').style.display = ehCancel?'':'none';
+  if(ehCancel){
+    if(fichaEstorno===null && c && c.categoria!=='cancelou') fichaEstorno = sugestaoEstorno(c);
+    renderEstorno(); dicaEstorno();
+  }
   if(temT) document.getElementById('condTextoLb').innerHTML = (cat.q||'Situação')+' <span class="req">*</span>';
   aplicaSugestaoProximo();
   renderProxAviso();
@@ -2737,7 +2957,7 @@ function salvarFicha(){
   if(cat.extra && cat.extra.indexOf('t')>=0 && !detalhe){ toast('Preencha: '+(cat.q||'situação')); return; }
   if(cat.extra && cat.extra.indexOf('d')>=0 && !data){ toast('Preencha a data'); return; }
   if(cat.extra && cat.extra.indexOf('r')>=0 && !rep){ toast('Preencha o representante'); return; }
-  if(cat.extra && cat.extra.indexOf('f')>=0 && !soDigitos(document.getElementById('cCota').value)){ toast('Preencha a cota (crédito liberado)'); return; }
+  if(catK==='fechou' && !soDigitos(document.getElementById('cCota').value)){ toast('Preencha a cota (crédito liberado)'); return; }
   var origK = document.getElementById('cOrigem').value || 'outros';
   var repassador = document.getElementById('cRepassador').value;
   if(origK==='repasse' && !repassador){ toast('Escolha quem repassou o lead'); return; }
@@ -2769,6 +2989,7 @@ function salvarFicha(){
   if(cat.extra&&cat.extra.indexOf('f')>=0){
     var cota = Number(soDigitos(document.getElementById('cCota').value));
     var vd = Number(soDigitos(document.getElementById('cVenceDia').value));
+    var ad = Number(soDigitos(document.getElementById('cAssembDia').value));
     c.fech = {
       cota: cota,
       comissao: Math.round(cota*0.01),
@@ -2778,9 +2999,14 @@ function salvarFicha(){
       senha: document.getElementById('cSenha').value.trim() || null,
       parcela: Number(soDigitos(document.getElementById('cParcela').value)) || null,
       venceDia: (vd>=1 && vd<=31) ? vd : null,
+      assembDia: (ad>=1 && ad<=31) ? ad : null,
+      asmVista: (c.fech && c.fech.asmVista) || null,
       totalParc: Number(soDigitos(document.getElementById('cTotalParc').value)) || null,
-      parcPagas: (c.fech && c.fech.parcPagas) || 0
+      parcPagas: (c.fech && c.fech.parcPagas) || 0,
+      pgs: (c.fech && c.fech.pgs) ? c.fech.pgs.slice() : [],
+      estornada: catK==='cancelou' ? fichaEstorno : ((c.fech && c.fech.estornada) || false)
     };
+    ajustaPgs(c.fech, c.fech.parcPagas, tsEv, true);
   }
   c.dataContato = document.getElementById('cDataContato').value || c.dataContato || hojeISO();
   if(!c.info) c.info = {requisitos:{},dados:[]};
@@ -2826,6 +3052,9 @@ function salvarFicha(){
     logH('primeira_visita','Primeira visita de '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
   if(catMudou && catK==='nao_compareceu')
     logH('nao_compareceu','Não compareceu — '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
+  if(catMudou && catK==='cancelou')
+    logH('cancelamento','Cancelou — '+nomeCli(c)+' — '+c.numero+' — cota '+fmtMoney((c.fech&&c.fech.cota)||0)+
+      ' — comissão '+(estornou(c)?'estornada':'mantida')+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
   if(!novo && c.proximo.data && c.proximo.data>hojeISO()) marcarFeito(c.id);
   save(c); fecharFicha(); renderList(); renderDash(); renderFech(); renderFila();
   pedirUndo((novo?'Cliente cadastrado: ':'Cliente salvo: ')+nomeCli(c), snapSalvar);
@@ -3007,10 +3236,17 @@ function importarJSON(){
         var vdd = Number(soDigitos(fx.vence_dia));
         c.fech.venceDia = (vdd>=1 && vdd<=31)?vdd:null;
       }
+      if(fx.assembleia_dia!==undefined && fx.assembleia_dia!=null){
+        var add = Number(soDigitos(fx.assembleia_dia));
+        c.fech.assembDia = (add>=1 && add<=31)?add:null;
+      }
       if(fx.total_parcelas!==undefined && fx.total_parcelas!=null) c.fech.totalParc = Number(soDigitos(fx.total_parcelas))||null;
       if(fx.parcelas_pagas!==undefined && fx.parcelas_pagas!=null) c.fech.parcPagas = Number(soDigitos(fx.parcelas_pagas))||0;
+      if(fx.estornada!==undefined) c.fech.estornada = fx.estornada===true?true:(fx.estornada===false?false:null);
       if(c.fech.parcPagas==null) c.fech.parcPagas = 0;
+      ajustaPgs(c.fech, c.fech.parcPagas, tsEv, true);
     }
+    if(catK==='cancelou' && c.fech && c.fech.estornada==null) c.fech.estornada = sugestaoEstorno(c);
     if(catK==='fechou' && (!c.fech || !c.fech.cota)) erros.push('Aviso item '+(i+1)+' ('+(c.nome||c.numero)+'): fechou sem cota — preencha depois na ficha');
     var fonteProx = d.proximo || d.lembrete;
     if(fonteProx){
@@ -3057,6 +3293,9 @@ function importarJSON(){
       logH('primeira_visita','Primeira visita de '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
     if(catMudou && catK==='nao_compareceu')
       logH('nao_compareceu','Não compareceu — '+nomeCli(c)+' — '+c.numero+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
+    if(catMudou && catK==='cancelou')
+      logH('cancelamento','Cancelou — '+nomeCli(c)+' — '+c.numero+' — cota '+fmtMoney((c.fech&&c.fech.cota)||0)+
+        ' — comissão '+(estornou(c)?'estornada':'mantida')+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
   });
   save(); renderList(); renderDash();
   var msg = '';
@@ -3112,8 +3351,10 @@ function copiarJSON(){
       senha: c.fech.senha||null,
       parcela: c.fech.parcela||null,
       vence_dia: c.fech.venceDia||null,
+      assembleia_dia: c.fech.assembDia||null,
       total_parcelas: c.fech.totalParc||null,
-      parcelas_pagas: c.fech.parcPagas||0
+      parcelas_pagas: c.fech.parcPagas||0,
+      estornada: (c.fech.estornada===true||c.fech.estornada===false)?c.fech.estornada:null
     } : null,
     proximo: (c.proximo && (c.proximo.data||c.proximo.motivo)) ?
       {data:c.proximo.data||null, hora:c.proximo.hora||null, motivo:c.proximo.motivo||null, comigo:c.proximo.comigo!==false} : null,
@@ -3124,14 +3365,15 @@ function copiarJSON(){
 
 /* ======== FECHAMENTOS ======== */
 function listaFech(){
-  return db.clientes.filter(function(c){ return c.categoria==='fechou'; })
+  /* cancelado continua aqui: ele precisa consultar cota, CPF, senha e parcelas depois */
+  return db.clientes.filter(function(c){ return c.categoria==='fechou' || c.categoria==='cancelou'; })
     .sort(function(a,b){ return ultimaEntrada(b,['fechou'])-ultimaEntrada(a,['fechou']); });
 }
 function renderFech(){
   var fs = listaFech();
   var el = document.getElementById('tblFech');
   if(!fs.length){ el.innerHTML = '<tbody><tr><td class="empty" style="border:none">Nenhum fechamento ainda. Quando um cliente fechar, ele aparece aqui sozinho.</td></tr></tbody>'; return; }
-  var head = '<thead><tr><th>Vendedor</th><th>Cliente</th><th>CPF</th><th>Número</th><th>Cota</th><th>Comissão</th><th>Contemplação</th><th>Senha</th><th>Parcela</th><th>Vence</th><th>Parcelas</th><th>Cobrar</th></tr></thead>';
+  var head = '<thead><tr><th>Vendedor</th><th>Cliente</th><th>CPF</th><th>Número</th><th>Cota</th><th>Com. cota</th><th>Com. parcelas</th><th>Contemplação</th><th>Assembleia</th><th>Senha</th><th>Parcela</th><th>Vence</th><th>Parcelas</th><th>Cobrar</th></tr></thead>';
   var body = fs.map(function(c){
     var f = c.fech||{};
     var pagas = f.parcPagas||0, total = f.totalParc||0;
@@ -3141,19 +3383,24 @@ function renderFech(){
       ? '<div style="min-width:96px"><div style="font-size:12px; font-weight:600">'+pagas+'/'+total+'</div>'+
         '<div style="height:6px; border-radius:999px; background:var(--card2); overflow:hidden; margin-top:3px"><i style="display:block; height:100%; width:'+p+'%; background:linear-gradient(90deg,var(--amber),var(--green))"></i></div></div>'
       : (pagas? pagas+' paga(s)' : '—');
-    return '<tr>'+
+    var cancel = c.categoria==='cancelou';
+    var marca = cancel ? ' <span class="pill" style="color:'+CORES.red+'; background:'+CORES.red+'22; border:1px solid '+CORES.red+'55">Cancelou'+(estornou(c)?' · estornada':'')+'</span>' : '';
+    var asm = proximaAssembleiaISO(c);
+    return '<tr'+(cancel?' style="opacity:.72"':'')+'>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+VENDEDOR+'</td>'+
-      '<td style="font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+esc(c.nome||'(sem nome)')+'</td>'+
+      '<td style="font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+esc(c.nome||'(sem nome)')+marca+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+esc(f.cpf||'—')+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+esc(c.numero)+'</td>'+
       '<td style="color:var(--blue); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(f.cota||0)+'</td>'+
-      '<td style="color:var(--green); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(f.comissao!=null?f.comissao:Math.round((f.cota||0)*0.01))+'</td>'+
+      '<td style="color:var(--green); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(comissaoCota(c))+'</td>'+
+      '<td style="color:var(--teal); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(comissaoParcelas(c,null,null))+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+(f.contemplacao?fmtDataFull(f.contemplacao):'—')+'</td>'+
+      '<td onclick="abrirFicha(\''+c.id+'\')">'+(asm?fmtDataFull(asm):(f.assembDia?'dia '+f.assembDia:'—'))+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+esc(f.senha||'—')+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+(f.parcela?fmtMoney(f.parcela):'—')+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+(venc?fmtDataFull(venc):(f.venceDia?'dia '+f.venceDia:'—'))+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+prog+'</td>'+
-      '<td class="wa">'+(f.parcela&&f.venceDia?'<a href="'+linkCobranca(c)+'" target="_blank" rel="noopener">Cobrar</a>':'—')+'</td>'+
+      '<td class="wa">'+(!cancel&&f.parcela&&f.venceDia?'<a href="'+linkCobranca(c)+'" target="_blank" rel="noopener">Cobrar</a>':'—')+'</td>'+
       '</tr>';
   }).join('');
   el.innerHTML = head+'<tbody>'+body+'</tbody>';
@@ -3164,11 +3411,14 @@ function dadosPlanilha(){
     return {
       'Vendedor': VENDEDOR,
       'Cliente': c.nome||'(sem nome)',
+      'Situação': c.categoria==='cancelou' ? ('Cancelou'+(estornou(c)?' (comissão estornada)':' (comissão mantida)')) : 'Ativo',
       'CPF': f.cpf||'',
       'Número': c.numero,
       'Cota (R$)': f.cota||0,
-      'Comissão (R$)': f.comissao!=null?f.comissao:Math.round((f.cota||0)*0.01),
+      'Comissão da cota (R$)': comissaoCota(c),
+      'Comissão das parcelas (R$)': comissaoParcelas(c,null,null),
       'Contemplação': f.contemplacao?fmtDataFull(f.contemplacao):'',
+      'Assembleia (dia)': f.assembDia||'',
       'Senha': f.senha||'',
       'Valor da parcela': f.parcela||'',
       'Vence dia': f.venceDia||'',
@@ -3183,7 +3433,7 @@ function baixarPlanilha(){
   if(!rows.length){ toast('Nenhum fechamento pra exportar'); return; }
   function comXLSX(){
     var ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch:12},{wch:24},{wch:16},{wch:15},{wch:12},{wch:13},{wch:14},{wch:14},{wch:15},{wch:11},{wch:18},{wch:14},{wch:16}];
+    ws['!cols'] = [{wch:12},{wch:24},{wch:26},{wch:16},{wch:15},{wch:12},{wch:20},{wch:22},{wch:14},{wch:15},{wch:14},{wch:15},{wch:11},{wch:18},{wch:14},{wch:16}];
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Fechamentos');
     XLSX.writeFile(wb, 'fechamentos-'+VENDEDOR.toLowerCase()+'-'+hojeISO()+'.xlsx');
@@ -3237,7 +3487,7 @@ function abrirFichaPorSid(sid){
   if(c) abrirFicha(c.id);
   else toast('Cliente não encontrado (pode ter sido excluído)');
 }
-var HIST_RUIDO = ['cliente_adicionado','cliente_modificado','contato','tarefa_feita','fila_dispensada','lembrete_expirado'];
+var HIST_RUIDO = ['cliente_adicionado','cliente_modificado','contato','tarefa_feita','fila_dispensada','lembrete_expirado','fila_ok'];
 var histSoImportante = false;
 function alternaHistFiltro(){ histSoImportante = !histSoImportante; renderHist(); }
 function renderHist(){
@@ -3293,7 +3543,7 @@ function montaPDF(iv, lista){
   var deTxt = new Date(iv[0]).toLocaleDateString('pt-BR');
   var ateTxt = new Date(iv[1]).toLocaleDateString('pt-BR');
 
-  var DESTAQUES = ['fechamento','primeira_visita','nao_compareceu','agendamento','meta_batida','meta_concluida'];
+  var DESTAQUES = ['fechamento','primeira_visita','nao_compareceu','agendamento','meta_batida','meta_concluida','contemplado','cancelamento'];
   var marcos = lista.filter(function(x){ return DESTAQUES.indexOf(x.tipo)>=0; });
 
   function porDia(evs){
@@ -3329,6 +3579,9 @@ function montaPDF(iv, lista){
     if(h.tipo==='agendamento') return 'Agendou: '+quem+(cli&&cli.data?' para '+fmtDataFull(cli.data)+(cli.hora?' as '+cli.hora:''):'');
     if(h.tipo==='meta_batida' || h.tipo==='meta_concluida') return h.texto;
     if(h.tipo==='parcela_paga') return 'Parcela paga: '+quem;
+    if(h.tipo==='contemplado') return 'CONTEMPLADO: '+quem+(cli&&cli.fech?' — cota '+fmtMoney(cli.fech.cota||0):'');
+    if(h.tipo==='cancelamento') return 'CANCELOU: '+quem+(cli&&cli.detalhe?' — '+corta(cli.detalhe,90):'');
+    if(h.tipo==='assembleia') return 'Assembleia sem contemplacao: '+quem;
     if(h.tipo==='promessa') return quem+' ficou de: '+corta(h.texto.replace(/^Ficou de:\s*/,''),80);
     if(h.tipo==='cliente_modificado'){
       var fr = frasesMudancaTexto(h.m);
@@ -3401,7 +3654,9 @@ function montaPDF(iv, lista){
       ['Vendas fechadas', String(m.vendas)],
       ['Cotas vendidas', fmtMoney(totalCotas)],
       ['Compareceram', m.comp+' de '+m.agd+(pct(m.comp,m.agd)!=null?' ('+pct(m.comp,m.agd)+'%)':'')],
-      ['Comissao', fmtMoney(Math.round(totalCotas*0.01))]
+      ['Comissao da cota', fmtMoney(m.comissao)],
+      ['Comissao de parcelas', fmtMoney(m.comParc)],
+      ['Comissao total', fmtMoney(m.comTotal)]
     ]);
 
     titulo('Como foi o trabalho');
