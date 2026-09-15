@@ -111,6 +111,20 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
 .tgl button{background:var(--card2); border:1px solid var(--border2); color:var(--tx3); border-radius:8px; padding:8px 16px; min-height:40px; font-size:12.5px; font-weight:600}
 .tgl button.sim.on{background:rgba(76,217,100,.15); border-color:var(--green); color:var(--green)}
 .tgl button.nao.on{background:rgba(228,87,46,.15); border-color:var(--red); color:var(--red)}
+.tgl button.opt.on{background:rgba(255,176,32,.15); border-color:var(--amber); color:var(--amber)}
+.posbox{background:var(--card2); border:1px solid var(--border2); border-radius:10px; padding:2px 12px 12px; margin-top:14px}
+.posbox h3{font-family:var(--disp); font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tx2); margin:12px 0 4px}
+.chkrow{display:flex; align-items:center; gap:10px; width:100%; min-height:46px; background:none; border:none; border-bottom:1px solid var(--border); color:var(--tx2); font-size:14px; text-align:left; padding:8px 2px; font-family:inherit}
+.chkrow:last-child{border-bottom:none}
+.chkrow .cb{flex:0 0 24px; height:24px; border-radius:6px; border:1.5px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:transparent}
+.chkrow.on{color:var(--tx)}
+.chkrow.on .cb{background:var(--green); border-color:var(--green); color:#0B1A0E}
+.chkrow .cd{margin-left:auto; font-size:11.5px; color:var(--tx3); white-space:nowrap}
+.posnx{font-size:12.5px; color:var(--tx2); margin-top:8px; line-height:1.45}
+.pvitem{background:var(--card); border:1px solid var(--border2); border-radius:10px; padding:9px 11px; margin-top:8px}
+.pvitem .pvd{font-size:11.5px; font-weight:600; color:var(--teal); text-transform:uppercase; letter-spacing:.05em}
+.pvitem .pvt{font-size:13.5px; color:var(--tx); margin-top:3px; white-space:pre-wrap; overflow-wrap:anywhere}
+.pvitem .pvb{display:flex; gap:8px; margin-top:4px}
 .entradaview{font-size:13px; color:var(--tx2); margin-top:7px; background:var(--card2); border:1px solid var(--border2); border-radius:8px; padding:8px 10px}
 .entradaview b{color:var(--tx)}
 .entradaview .ok{color:var(--green); font-weight:600}
@@ -342,6 +356,7 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
       <div class="tbright">
         <select class="dashsel" id="dashCat" onchange="renderDash()"></select>
         <select class="dashsel" id="dashOrig" onchange="renderDash()"></select>
+        <select class="dashsel" id="dashObj" onchange="renderDash()"></select>
         <button class="iconbtn" onclick="copiarRelatorioDia()">Relatório do dia</button>
       </div>
     </div>
@@ -397,6 +412,7 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
     <div class="filtros">
       <select id="fCat" onchange="renderList()"></select>
       <select id="fOrig" onchange="renderList()"></select>
+      <select id="fObj" onchange="renderList()"></select>
       <select id="fOrd" onchange="renderList()">
         <option value="rec">Mais recentes</option>
         <option value="az">Nome A–Z</option>
@@ -468,9 +484,11 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
       <select id="cRepassador"></select>
       <div style="font-size:12px; color:var(--tx2); margin-top:5px">Edite a lista da equipe em Configurações (⚙ no topo).</div>
     </div>
+    <label>Objetivo</label>
+    <select id="cObjetivo" onchange="atualizaObjetivo()"></select>
     <div class="row2">
-      <div><label>Veículo de interesse</label><input id="cVeiculo" placeholder="Ex.: Onix 2020"></div>
-      <div><label>Valor do veículo (R$)</label><input id="cValorVeiculo" inputmode="numeric" placeholder="55000"></div>
+      <div><label>O que ele quer</label><input id="cVeiculo" placeholder="Ex.: Onix 2020"></div>
+      <div><label>Quanto custa (R$)</label><input id="cValorVeiculo" inputmode="numeric" placeholder="55000"></div>
     </div>
     <label>Anúncio / perfil que trouxe o lead</label>
     <input id="cAnuncio" list="listaAnunciosDatalist" placeholder="Ex.: Onix 2020 prata — post 12/08">
@@ -535,23 +553,28 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
         <div style="font-size:12px; color:var(--tx2); margin-top:6px">No dia da assembleia a agenda pergunta se ele foi contemplado. Se não saiu, ele volta sozinho no mês seguinte.</div>
         <div class="comview" id="comParcView" style="display:none"></div>
         <div class="parcprog" id="parcProg"></div>
+        <div class="posbox" id="posBox">
+          <h3>Pós-venda</h3>
+          <div id="posChk"></div>
+          <div class="posnx" id="posNx"></div>
+          <label>Relatório de fechamento</label>
+          <textarea id="cRelFech" placeholder="Como foi o fechamento: se foi tranquilo, o que ficou combinado..."></textarea>
+          <button type="button" class="minibtn" onclick="copiarRelFech()">Copiar relatório de fechamento</button>
+          <label>Relatórios do pós-venda</label>
+          <textarea id="cPvNovo" placeholder="Como ele está: como foi a semana, alguma dúvida, algum problema..."></textarea>
+          <button type="button" class="minibtn" onclick="addPv()">+ Adicionar situação</button>
+          <div id="listaPv"></div>
+        </div>
       </div>
     </div>
 
     <div class="infosec">
       <h3 style="margin-top:16px">Informações do cliente</h3>
       <h3>Requisitos</h3>
-      <div class="row2" style="margin-top:8px">
-        <div><label style="margin-top:0">Entrada que ele tem (R$)</label><input id="rTem" inputmode="numeric" placeholder="2000" oninput="viewEntrada()"></div>
-        <div><label style="margin-top:0">Entrada que precisa (R$)</label><input id="rPrecisa" inputmode="numeric" placeholder="5000" oninput="viewEntrada()"></div>
-      </div>
-      <div class="entradaview" id="entradaView" style="display:none"></div>
+      <div class="reqrow"><div class="rlb">Como ele entra<div style="font-size:11.5px; color:var(--tx3); font-weight:400">muda a comissão da cota</div></div><div class="tgl" id="tglEntrada"></div></div>
       <div class="reqrow"><div class="rlb">Entrada em mãos<div style="font-size:11.5px; color:var(--tx3); font-weight:400">já tem o dinheiro agora?</div></div><div class="tgl" id="tglMaos"></div></div>
-      <div class="reqrow"><div class="rlb">Interesse</div><div class="tgl" id="tglInteresse"></div></div>
-      <div class="reqrow"><div class="rlb">Tempo disponível</div><div class="tgl" id="tglTempo"></div></div>
-      <div class="reqrow"><div class="rlb">Prioridade</div><div class="tgl" id="tglPrioridade"></div></div>
       <h3>Problemas e dores</h3>
-      <textarea id="cProblemas" placeholder="O que ele sofre, por que precisa do carro, o que resolve a vida dele..."></textarea>
+      <textarea id="cProblemas" placeholder="O que ele sofre, por que precisa disso, o que resolve a vida dele..."></textarea>
       <h3>Nota</h3>
       <textarea id="cNota" placeholder="Seu parecer sobre a chamada: o que sentiu, o que acredita ser possível..."></textarea>
       <h3>Outras informações</h3>
@@ -653,6 +676,20 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
   </div>
 </div>
 
+<div class="overlay" id="ovPos">
+  <div class="inner popbox">
+    <div class="ovhead">
+      <h2>Contato semanal</h2>
+      <button class="iconbtn" onclick="fecharPos()">Fechar</button>
+    </div>
+    <div id="posQuem" style="font-size:13.5px; color:var(--tx2); margin-top:4px"></div>
+    <label>Como ele está?</label>
+    <textarea id="posTxt" placeholder="Vira o relatório do pós-venda na ficha dele"></textarea>
+    <button class="btn save" onclick="salvarPosSemanal(true)">Salvar e copiar relatório</button>
+    <button class="btn ghost" onclick="salvarPosSemanal(false)">Só salvar</button>
+  </div>
+</div>
+
 <div class="overlay" id="ovMeta">
   <div class="inner popbox">
     <div class="ovhead">
@@ -733,9 +770,9 @@ var VENDEDOR = 'Pedro';
 var CATS = {
   sem_retorno:        {lb:'Sem retorno',            cor:'gray',   extra:null},
   desinteressado:     {lb:'Desinteressado',         cor:'red',    extra:'t',  q:'Por que não tem interesse?'},
-  quer_a_vista:       {lb:'Quer à vista',           cor:'amber',  extra:'t',  q:'Quanto ele tem? Tem o valor cheio?'},
+  quer_a_vista:       {lb:'Quer à vista',           cor:'amber',  extra:'t',  q:'Quanto ele tem? Tem o valor cheio?', velho:true},
   negociando:         {lb:'Negociando',             cor:'amber',  extra:'t',  q:'Qual a situação dele?'},
-  desconfiado:        {lb:'Desconfiado',            cor:'amber',  extra:'t',  q:'Situação / o que escrever pra ele'},
+  desconfiado:        {lb:'Desconfiado',            cor:'amber',  extra:'t',  q:'Situação / o que escrever pra ele', velho:true},
   agendamento_inicial:{lb:'Agendamento inicial',    cor:'teal',   extra:'d'},
   confirmado:         {lb:'Confirmado',             cor:'teal',   extra:'d'},
   reagendado:         {lb:'Reagendado',             cor:'teal',   extra:'d'},
@@ -747,7 +784,9 @@ var CATS = {
 };
 var CAT_MIGRA = {ver_carro:'negociando', negocio_pendente:'negociando',
   acompanhar_distancia:'negociando', acompanhar_agenda:'negociando',
-  acompanhar_nao_decisor:'negociando', acompanhar_outros:'negociando'};
+  acompanhar_nao_decisor:'negociando', acompanhar_outros:'negociando',
+  /* set/2026: saíram da lista. Continuam em CATS (velho:true) só pra o histórico antigo contar certo no funil */
+  quer_a_vista:'desinteressado', desconfiado:'negociando'};
 var CORES = {gray:'#8B959B', red:'#E4572E', amber:'#FFB020', blue:'#58A6FF', purple:'#B18CFF', teal:'#2FD6A7', green:'#4CD964'};
 var NEG_CATS = Object.keys(CATS).filter(function(k){ return k!=='sem_retorno'; });
 var AGD_CATS = ['agendamento_inicial','confirmado','reagendado','reagendado_confirmado'];
@@ -764,6 +803,23 @@ var ORIGENS = {
   garagem:   {lb:'Indicação de garagem',cor:'green',  dica:'Não passou no financiamento e recebeu a alternativa. Costuma ser o lead mais quente.'},
   outros:    {lb:'Outros',              cor:'gray',   dica:'Qualquer outra origem.'}
 };
+var OBJETIVOS = {
+  carro:        {lb:'Carro',        ph:'Ex.: Onix 2020'},
+  imovel:       {lb:'Imóvel',       ph:'Ex.: casa de 2 quartos'},
+  investimento: {lb:'Investimento', ph:'Ex.: renda com aluguel'},
+  viagem:       {lb:'Viagem',       ph:'Ex.: Europa com a família'},
+  processo:     {lb:'Processo',     ph:'Descreva o objetivo'}
+};
+/* checklist do pós-venda, na ordem em que acontece. [chave, texto curto, texto da ficha] */
+var POS_CHECK = [
+  ['app',   'app e senha',        'Baixou o app e passou a senha'],
+  ['lance', 'lance',              'Lance dado'],
+  ['recon', 'lig. reconhecimento','Ligação de reconhecimento feita'],
+  ['adm',   'lig. da ADM',        'Recebeu a ligação da ADM'],
+  ['docs',  'documentos',         'Termo e documentos enviados pro grupo da ADM'],
+  ['relf',  'relatório no grupo', 'Relatório de fechamento enviado no grupo'],
+  ['asm',   'data da assembleia', 'Data da assembleia passada pra ele']
+];
 var HIST_TIPOS = {
   cliente_adicionado:{lb:'Adicionado', cor:'blue'},
   cliente_modificado:{lb:'Modificado', cor:'gray'},
@@ -788,7 +844,8 @@ var HIST_TIPOS = {
   fila_ok:{lb:'Resolvido na fila', cor:'green'},
   assembleia:{lb:'Assembleia', cor:'purple'},
   contemplado:{lb:'Contemplado', cor:'green'},
-  cancelamento:{lb:'Cancelamento', cor:'red'}
+  cancelamento:{lb:'Cancelamento', cor:'red'},
+  pos_venda:{lb:'Pós-venda', cor:'teal'}
 };
 var SEM_PROXIMO = ['sem_retorno','desinteressado','fechou','cancelou'];
 var SUGESTOES = {
@@ -807,8 +864,8 @@ var CAMPOS_RASTREADOS = {
   prior: {lb:'prioridade',           tipo:'simnao'},
   dt:    {lb:'data do agendamento',  tipo:'data'},
   hr:    {lb:'hora do agendamento',  tipo:'texto'},
-  vei:   {lb:'veículo de interesse', tipo:'texto'},
-  vlv:   {lb:'valor do veículo',     tipo:'dinheiro'},
+  vei:   {lb:'o que ele quer',       tipo:'texto'},
+  vlv:   {lb:'valor do objetivo',    tipo:'dinheiro'},
   anun:  {lb:'anúncio',              tipo:'texto'},
   ori:   {lb:'origem',               tipo:'origem'},
   sit:   {lb:'situação',             tipo:'longo'},
@@ -822,9 +879,13 @@ var CAMPOS_RASTREADOS = {
   contem:{lb:'contemplação',         tipo:'data'},
   asm:   {lb:'dia da assembleia',    tipo:'texto'},
   est:   {lb:'comissão estornada',   tipo:'simnao'},
-  dados: {lb:'informações',          tipo:'lista'}
+  dados: {lb:'informações',          tipo:'lista'},
+  obj:   {lb:'objetivo',             tipo:'texto'},
+  ent:   {lb:'como entra',           tipo:'texto'},
+  pvchk: {lb:'checklist do pós-venda', tipo:'texto'},
+  relf:  {lb:'relatório de fechamento', tipo:'longo'}
 };
-var HIST_IMPORTANTES = ['agendamento','fechamento','primeira_visita','nao_compareceu','meta_batida','meta_concluida','relatorio_dia','parcela_paga','contemplado','cancelamento'];
+var HIST_IMPORTANTES = ['agendamento','fechamento','primeira_visita','nao_compareceu','meta_batida','meta_concluida','relatorio_dia','parcela_paga','contemplado','cancelamento','pos_venda'];
 
 /* ======== ARMAZENAMENTO COMPACTO ======== */
 var HIST_ORDEM = Object.keys(HIST_TIPOS);
@@ -1421,7 +1482,6 @@ function filaDoDia(){
     if(agdHoje){ ord=1; etiq='Agendado hoje'; cls='hoje'; }
     else if(faltou){ ord=2; etiq='Não compareceu'; cls='urg'; }
     else if(agdAmanha){ ord=3; etiq='Agendado amanhã'; cls='hoje'; }
-    else if(cat==='desconfiado'){ ord=4; etiq='Desconfiado'; cls='aten'; }
     else if(semData && !vencido){ ord=6; etiq='Sem próximo contato'; cls='aten'; }
     else { ord=5; etiq=null; cls=''; }
     var naoAtendeuHoje = ligouHoje(c).length>0;
@@ -1585,7 +1645,11 @@ function valoresRastreados(c){
     contem: f.contemplacao||null,
     asm: f.assembDia!=null?String(f.assembDia):null,
     est: sn(f.estornada),
-    dados: (inf.dados||[]).map(function(d){ return d.titulo; }).join(', ')||null
+    dados: (inf.dados||[]).map(function(d){ return d.titulo; }).join(', ')||null,
+    obj: (c.objetivo || c.veiculo || c.valorVeiculo) ? OBJETIVOS[objetivoChave(c)].lb : null,
+    ent: c.entrada==='sem' ? 'sem adesão' : (c.entrada==='com' ? 'com entrada' : null),
+    pvchk: c.fech ? chkFeitos(c.fech)+'/'+POS_CHECK.length : null,
+    relf: f.rel || null
   };
 }
 function diffRastreado(antes, depois){
@@ -1781,10 +1845,32 @@ function primeiraAssembleiaISO(c){
   return proximoDiaMesISO(f.assembDia, isoDeTs(t));
 }
 function estornou(c){ return c.categoria==='cancelou' && !!(c.fech && c.fech.estornada); }
-function comissaoCota(c){
+function semAdesao(c){ return c.entrada==='sem'; }
+function comissaoCotaTotal(c){
   var f = c.fech||{};
   if(estornou(c)) return 0;
   return f.comissao!=null ? f.comissao : Math.round((f.cota||0)*0.01);
+}
+function tercoCota(total, i){
+  /* sem adesão: 1% da cota em 3 partes. A última leva o resto do arredondamento */
+  var t = Math.floor(total/3);
+  return i<2 ? t : total-2*t;
+}
+function comissaoCota(c){
+  /* o que já entrou. Com entrada: tudo no fechamento. Sem adesão: 1/3 a cada uma das 3 primeiras parcelas pagas */
+  var total = comissaoCotaTotal(c);
+  if(!semAdesao(c)) return total;
+  var n = Math.min(3, (c.fech && c.fech.parcPagas) || 0), s = 0;
+  for(var i=0;i<n;i++) s += tercoCota(total, i);
+  return s;
+}
+function comissaoCotaPeriodo(c, ini, fim){
+  var total = comissaoCotaTotal(c);
+  if(!total) return 0;
+  if(!semAdesao(c)) return passouEm(c, ET_VENDA, ini, fim) ? total : 0;
+  var pgs = (c.fech && c.fech.pgs) || [], s = 0;
+  for(var i=0;i<3 && i<pgs.length;i++) if(pgs[i]>=ini && pgs[i]<=fim) s += tercoCota(total, i);
+  return s;
 }
 function comissaoParcelas(c, ini, fim){
   var f = c.fech||{};
@@ -1799,6 +1885,45 @@ function comissaoParcelas(c, ini, fim){
   return Math.round(valor*n*0.01);
 }
 function comissaoTotalCliente(c){ return comissaoCota(c)+comissaoParcelas(c, null, null); }
+/* ======== PÓS-VENDA ======== */
+function chkFeitos(f){
+  var ch = (f && f.chk) || {}, n = 0;
+  POS_CHECK.forEach(function(p){ if(ch[p[0]]) n++; });
+  return n;
+}
+function chkCompleto(f){ return chkFeitos(f)===POS_CHECK.length; }
+function chkFaltam(f){
+  var ch = (f && f.chk) || {};
+  return POS_CHECK.filter(function(p){ return !ch[p[0]]; }).map(function(p){ return p[1]; });
+}
+function chkConcluidoEm(f){
+  if(!chkCompleto(f)) return 0;
+  var t = 0;
+  POS_CHECK.forEach(function(p){ if(f.chk[p[0]]>t) t = f.chk[p[0]]; });
+  return t;
+}
+function proximoSemanalISO(c){
+  /* 7 dias depois do último marco: checklist completo, último relatório ou última vez que o semanal foi resolvido */
+  var f = c.fech||{};
+  var t = chkConcluidoEm(f);
+  (f.pv||[]).forEach(function(x){ if(x.ts>t) t = x.ts; });
+  var base = t ? isoDeTs(t) : '';
+  if(f.semUlt && f.semUlt > base) base = f.semUlt;
+  return base ? isoMenosDias(base, -7) : hojeISO();
+}
+function textoPosVenda(txt, nome){
+  return 'Situação:\n'+(txt||'(sem situação registrada)')+'\n\n'+
+    'Vendedor: '+VENDEDOR+'\n'+
+    'Cliente: '+(nome||'(sem nome)');
+}
+function textoRelFech(rel, dataIso, nome, rep, cota){
+  return 'Relatório:\n'+(rel||'(sem relatório registrado)')+'\n\n'+
+    'Data: '+(dataIso?fmtDataFull(dataIso):'—')+'\n'+
+    'Cliente: '+(nome||'(sem nome)')+'\n'+
+    'Vendedor: '+VENDEDOR+'\n'+
+    'Representante: '+(rep||'(não informado)')+'\n'+
+    'Cota: '+fmtMoney(cota||0);
+}
 function datasPassadasParcelas(f, n, refTs){
   /* n datas mensais pra trás, a partir do vencimento mais recente que já passou.
      Serve pra parcela que já estava paga antes de existir registro — não pode
@@ -1905,8 +2030,23 @@ function compromissosPeriodo(){
 function selCategorias(id, todosLabel){
   var s = document.getElementById(id);
   var h = '<option value="">'+todosLabel+'</option>';
-  for(var k in CATS) h += '<option value="'+k+'">'+CATS[k].lb+'</option>';
+  for(var k in CATS){ if(!CATS[k].velho) h += '<option value="'+k+'">'+CATS[k].lb+'</option>'; }
   s.innerHTML = h;
+}
+function selObjetivos(id, todosLabel){
+  var s = document.getElementById(id);
+  if(!s) return;
+  var h = todosLabel!=null ? '<option value="">'+todosLabel+'</option>' : '';
+  for(var k in OBJETIVOS) h += '<option value="'+k+'">'+OBJETIVOS[k].lb+'</option>';
+  s.innerHTML = h;
+}
+function objetivoChave(c){ return (c.objetivo && OBJETIVOS[c.objetivo]) ? c.objetivo : 'carro'; }
+function objetivoTxt(c, comValor){
+  /* cliente antigo sem nada preenchido não ganha "Carro" do nada */
+  if(!c.objetivo && !c.veiculo && !c.valorVeiculo) return '';
+  var s = OBJETIVOS[objetivoChave(c)].lb + (c.veiculo ? ' · '+c.veiculo : '');
+  if(comValor && c.valorVeiculo) s += ' · '+fmtMoney(c.valorVeiculo);
+  return s;
 }
 
 function ultimaEntrada(c, cats){
@@ -1944,10 +2084,11 @@ function metricasIntervalo(ini, fim, cs){
       if(l.ts>=ini && l.ts<=fim){ lig++; if(l.atendida){ atend++; if(l.efetiva) efet++; } }
     });
   });
-  var contatos=0, neg=0, agd=0, conf=0, comp=0, vendas=0, vendasV=0, comParc=0;
+  var contatos=0, neg=0, agd=0, conf=0, comp=0, vendas=0, vendasV=0, comParc=0, comissao=0;
   var somaDiasAgd=0, nAgd=0, somaDiasVenda=0, nVenda=0, totalCota=0;
   cs.forEach(function(c){
     comParc += comissaoParcelas(c, ini, fim);
+    if(c.fech) comissao += comissaoCotaPeriodo(c, ini, fim);
     var tc = tsContato(c);
     if(tc>=ini && tc<=fim) contatos++;
     if(passouEm(c, NEG_CATS, ini, fim)) neg++;
@@ -1963,7 +2104,6 @@ function metricasIntervalo(ini, fim, cs){
     var tv = primeiraEntrada(c, ET_VENDA);
     if(tv>0 && tv>=ini && tv<=fim && tc>0 && tv>=tc){ somaDiasVenda += (tv-tc)/864e5; nVenda++; }
   });
-  var comissao = Math.round(totalCota*0.01);
   return {
     lig:lig, atend:atend, efet:efet, contatos:contatos, neg:neg,
     agd:agd, conf:conf, comp:comp, vendas:vendas, vendasV:vendasV,
@@ -2047,7 +2187,8 @@ function renderDash(){
   var ini = inicioPeriodo(), fim = fimPeriodoDados();
   var fCat = document.getElementById('dashCat').value;
   var fOri = document.getElementById('dashOrig').value;
-  var cs = db.clientes.filter(function(c){ return (!fCat || c.categoria===fCat) && casaOrigem(c, fOri); });
+  var fObj = document.getElementById('dashObj').value;
+  var cs = db.clientes.filter(function(c){ return (!fCat || c.categoria===fCat) && casaOrigem(c, fOri) && (!fObj || objetivoChave(c)===fObj); });
   var m = metricasIntervalo(ini, fim, cs);
 
   document.getElementById('funil').innerHTML =
@@ -2087,8 +2228,6 @@ function renderDash(){
     kpi('Carteira esfriando', esfriando.length, 'bons sem contato há 7+ dias', esfriando.length?'warn':'')+
     kpi('Sem retorno', perdas.sem_retorno, 'no período')+
     kpi('Desinteressados', perdas.desinteressado, 'no período')+
-    kpi('Desconfiados', perdas.desconfiado, 'no período')+
-    kpi('Quer à vista', perdas.quer_a_vista, 'no período')+
     kpi('Cancelaram', perdas.cancelou, 'depois de fechar', perdas.cancelou?'bad':'');
 
   var porOri = origensIntervalo(ini, fim, cs);
@@ -2255,7 +2394,16 @@ function compromissos(){
     }
     if(c.categoria==='fechou'){
       var t9 = new Date(hoje+'T09:00').getTime();
-      evs.push({ts:t9, quem:nome, oq:'Mensagem diária — cliente fechado (obrigatório)', id:c.id, key:c.id+'|dia|'+hoje});
+      if(chkCompleto(c.fech)){
+        var sem = proximoSemanalISO(c);
+        var tsSem = Math.max(new Date(sem+'T09:00').getTime(), t9);
+        if(!isNaN(tsSem)) evs.push({ts:tsSem, quem:nome, oq:'Contato semanal — pós-venda (como ele está?)', id:c.id,
+                                    key:c.id+'|sem|'+sem, semanal:true});
+      }else{
+        var faltam = chkFaltam(c.fech);
+        evs.push({ts:t9, quem:nome, oq:'Contato diário — pós-venda ('+(POS_CHECK.length-faltam.length)+'/'+POS_CHECK.length+' · próximo: '+faltam[0]+')',
+                  id:c.id, key:c.id+'|dia|'+hoje});
+      }
       if(c.fech && c.fech.contemplacao){
         var tc = new Date(c.fech.contemplacao+'T09:00').getTime();
         if(!isNaN(tc)) evs.push({ts:tc, quem:nome, oq:'Contemplação — cota '+fmtMoney(c.fech.cota||0), id:c.id, key:c.id+'|cont|'+c.fech.contemplacao});
@@ -2303,6 +2451,7 @@ function renderAgenda(){
       '<div><div class="who">'+esc(e.quem)+'</div><div class="what">'+esc(e.oq)+'</div></div></div></div>'+
       '<div class="agbtns">'+
       (e.cobranca?'<button title="Mandar cobrança no WhatsApp" style="color:var(--green)" onclick="abrirCobranca(\''+e.id+'\')">✆</button>':'')+
+      (e.assembleia?'<button title="Avisar o resultado no WhatsApp" style="color:var(--green)" onclick="abrirWaCli(\''+e.id+'\')">✆</button>':'')+
       '<button class="ok" title="'+(e.assembleia?'Foi contemplado':'Feito')+'" onclick="tarefaFeita(\''+e.key+'\')">✓</button>'+
       '<button class="no" title="'+(e.assembleia?'Não saiu — concorre na próxima':'Não feito')+'" onclick="tarefaNaoFeita(\''+e.key+'\')">✕</button>'+
       '</div></div>';
@@ -2313,9 +2462,14 @@ function achaEvento(key){
   var evs = compromissos();
   return evs.find(function(e){ return e.key===key; });
 }
+function abrirWaCli(id){
+  var c = db.clientes.find(function(x){return x.id===id;}); if(!c) return;
+  window.open('https://wa.me/'+telWa(c.numero), '_blank', 'noopener');
+}
 function tarefaFeita(key){
-  var snap = tirarSnap();
   var e = achaEvento(key);
+  if(e && e.semanal){ abrirPosSemanal(key); return; }
+  var snap = tirarSnap();
   db.tarefas[key] = {status:'feita', ts:Date.now()};
   var msg = 'Tarefa concluída';
   if(e){
@@ -2379,6 +2533,47 @@ function tarefaNaoFeita(key){
   document.getElementById('motivoTxt').value = '';
   document.getElementById('ovMotivo').classList.add('show');
 }
+function semanalResolvido(e){
+  /* a próxima semana conta a partir de hoje, tenha feito ou não */
+  if(!e || !e.semanal) return;
+  var c = db.clientes.find(function(x){return x.id===e.id;});
+  if(!c || !c.fech) return;
+  c.fech.semUlt = hojeISO();
+  c.atualizadoEm = Date.now();
+}
+var posKey = null;
+function abrirPosSemanal(key){
+  var e = achaEvento(key); if(!e) return;
+  var c = db.clientes.find(function(x){return x.id===e.id;}); if(!c) return;
+  posKey = key;
+  document.getElementById('posQuem').textContent = nomeCli(c)+' — '+c.numero;
+  document.getElementById('posTxt').value = '';
+  var ov = document.getElementById('ovPos');
+  ov.classList.add('show');
+  ov.scrollTop = 0;
+}
+function fecharPos(){ posKey = null; document.getElementById('ovPos').classList.remove('show'); }
+function salvarPosSemanal(copiar){
+  if(!posKey) return;
+  var e = achaEvento(posKey);
+  var c = e ? db.clientes.find(function(x){return x.id===e.id;}) : null;
+  if(!c){ fecharPos(); return; }
+  var txt = document.getElementById('posTxt').value.trim();
+  if(copiar && !txt){ toast('Escreva a situação pra copiar'); return; }
+  var snap = tirarSnap();
+  if(!c.fech) c.fech = {};
+  db.tarefas[posKey] = {status:'feita', ts:Date.now()};
+  c.fech.semUlt = hojeISO();
+  if(txt){
+    if(!c.fech.pv) c.fech.pv = [];
+    c.fech.pv.push({ts:Date.now(), t:txt});
+    logH('pos_venda','Pós-venda — '+nomeCli(c)+' — '+c.numero+': '+txt, c);
+  }else logH('tarefa_feita','Feito: '+e.oq+' — '+e.quem+' ('+c.numero+')', c);
+  c.atualizadoEm = Date.now();
+  save(c); fecharPos(); renderDash();
+  if(copiar) copiarTexto(textoPosVenda(txt, c.nome), 'Relatório do pós-venda copiado');
+  pedirUndo('Contato semanal registrado — '+nomeCli(c), snap);
+}
 function fecharMotivo(){ motivoKey=null; motivoFilaId=null; document.getElementById('ovMotivo').classList.remove('show'); }
 function confirmarMotivo(){
   var motivo = document.getElementById('motivoTxt').value.trim();
@@ -2400,6 +2595,7 @@ function confirmarMotivo(){
   var e = achaEvento(motivoKey);
   db.tarefas[motivoKey] = {status:'nao_feita', motivo:motivo, ts:Date.now()};
   db.pendentes = (db.pendentes||[]).filter(function(p){ return p.key!==motivoKey; });
+  semanalResolvido(e);
   if(e){
     var c = db.clientes.find(function(x){return x.id===e.id;});
     logH('tarefa_nao_feita','Não feito: '+e.oq+' — '+e.quem+(c?' ('+c.numero+')':'')+(motivo?'. Motivo: '+motivo:''), c||null);
@@ -2411,6 +2607,7 @@ function ignorarMotivo(){
   if(motivoFilaId){ fecharMotivo(); return; }
   if(!motivoKey) return;
   var snap = tirarSnap();
+  semanalResolvido(achaEvento(motivoKey));
   db.tarefas[motivoKey] = {status:'ignorada', ts:Date.now()};
   db.pendentes = (db.pendentes||[]).filter(function(p){ return p.key!==motivoKey; });
   save(); fecharMotivo(); renderDash();
@@ -2469,8 +2666,10 @@ function clientesFiltrados(){
   var fc = document.getElementById('fCat').value;
   var iv = cliIntervalo();
   var fo = document.getElementById('fOrig').value;
+  var fj = document.getElementById('fObj').value;
   var cs = db.clientes.filter(function(c){ var t=tsContato(c); return t>=iv[0] && t<=iv[1]; });
   if(fc) cs = cs.filter(function(c){ return c.categoria===fc; });
+  if(fj) cs = cs.filter(function(c){ return objetivoChave(c)===fj; });
   if(fo) cs = cs.filter(function(c){ return casaOrigem(c, fo); });
   if(q) cs = cs.filter(function(c){
     return (c.nome||'').toLowerCase().indexOf(q)>=0 || (c.numero||'').indexOf(q)>=0 || String(c.sid)===q.replace('#','');
@@ -2494,8 +2693,8 @@ function renderList(){
     var extra = '';
     if(c.categoria==='fechou' && c.fech){
       extra = fmtMoney(c.fech.cota||0)+(c.fech.contemplacao?' · Contemplação: '+fmtData(c.fech.contemplacao):'');
-    }else if(c.veiculo){
-      extra = esc(c.veiculo)+(c.valorVeiculo?' · '+fmtMoney(c.valorVeiculo):'');
+    }else{
+      extra = esc(objetivoTxt(c, true));
     }
     var oc = origemCor(c);
     var opill = '<span class="origempill" style="color:'+oc+'; background:'+oc+'1e; border:1px solid '+oc+'44">'+esc(origemLb(c))+'</span>';
@@ -2534,7 +2733,7 @@ function dadosLista(){
       c: c,
       nome: c.nome || '',
       tel: telFormatado(c.numero),
-      carro: c.veiculo || '',
+      carro: objetivoTxt(c, false),
       categoria: (CATS[c.categoria]||{lb:c.categoria}).lb
     };
   });
@@ -2546,6 +2745,8 @@ function tituloLista(){
   var partes = [nomePer];
   if(fc) partes.push(CATS[fc].lb);
   if(fo) partes.push(fo.indexOf('rep:')===0 ? 'Repasse — '+fo.slice(4) : (ORIGENS[fo]||{lb:fo}).lb);
+  var fj = document.getElementById('fObj').value;
+  if(fj) partes.push(OBJETIVOS[fj].lb);
   return partes.join(' · ');
 }
 function abrirLista(){
@@ -2592,7 +2793,8 @@ function copiarLista(){
 var editId = null;
 var fichaReq = {};
 var fichaDados = [];
-var TGLS = [['Maos','maos'],['Interesse','interesse'],['Tempo','tempo'],['Prioridade','prioridade']];
+var TGLS = [['Maos','maos']];
+var fichaEntrada = null, fichaChk = {}, fichaPv = [];
 function renderTgls(){
   TGLS.forEach(function(par){
     var nm = par[0], kk = par[1];
@@ -2606,25 +2808,83 @@ function setTgl(k, v){
   fichaReq[k] = (fichaReq[k]===v) ? null : v;
   renderTgls();
 }
-function viewEntrada(){
-  var tem = Number(soDigitos(document.getElementById('rTem').value));
-  var precisa = Number(soDigitos(document.getElementById('rPrecisa').value));
-  var el = document.getElementById('entradaView');
-  if(!tem && !precisa){ el.style.display='none'; return; }
-  el.style.display='';
-  if(precisa){
-    var pct = Math.round(Math.min(tem/precisa,1)*100);
-    var aprovado = tem>=precisa;
-    el.innerHTML = 'Tem <b>'+fmtMoney(tem)+'</b> de <b>'+fmtMoney(precisa)+'</b> que precisa ('+pct+'%)'+
-      (aprovado?' — <span class="ok">tem mais do que precisa, aprovado ✓</span>':'');
-  }else{
-    el.innerHTML = 'Tem <b>'+fmtMoney(tem)+'</b> — informe quanto precisa pra fechar a conta.';
-  }
+function renderEntrada(){
+  document.getElementById('tglEntrada').innerHTML =
+    '<button type="button" class="opt'+(fichaEntrada==='com'?' on':'')+'" onclick="setEntrada(\'com\')">Com entrada</button>'+
+    '<button type="button" class="opt'+(fichaEntrada==='sem'?' on':'')+'" onclick="setEntrada(\'sem\')">Sem adesão</button>';
+}
+function setEntrada(v){ fichaEntrada = (fichaEntrada===v) ? null : v; renderEntrada(); viewComissao(); }
+function atualizaObjetivo(){
+  var k = document.getElementById('cObjetivo').value || 'carro';
+  document.getElementById('cVeiculo').placeholder = (OBJETIVOS[k]||OBJETIVOS.carro).ph;
 }
 function viewComissao(){
   var cota = Number(soDigitos(document.getElementById('cCota').value));
-  document.getElementById('comView').innerHTML = 'Comissão (1%): <b>'+fmtMoney(Math.round(cota*0.01))+'</b> — calculada sozinha.';
+  var total = Math.round(cota*0.01);
+  var el = document.getElementById('comView');
+  if(fichaEntrada==='sem'){
+    var c = editId ? db.clientes.find(function(x){return x.id===editId;}) : null;
+    var pagas = Math.min(3, (c && c.fech && c.fech.parcPagas) || 0), ja = 0;
+    for(var i=0;i<pagas;i++) ja += tercoCota(total, i);
+    el.innerHTML = 'Comissão da cota (1%): <b>'+fmtMoney(total)+'</b> — sem adesão: entra em 3 partes, uma a cada uma das 3 primeiras parcelas pagas. Já entrou '+fmtMoney(ja)+' ('+pagas+'/3).';
+  }else{
+    el.innerHTML = 'Comissão (1%): <b>'+fmtMoney(total)+'</b> — calculada sozinha.';
+  }
   viewComParc();
+}
+function renderPosVenda(){
+  var el = document.getElementById('posChk'); if(!el) return;
+  el.innerHTML = POS_CHECK.map(function(p){
+    var ts = fichaChk[p[0]];
+    return '<button type="button" class="chkrow'+(ts?' on':'')+'" onclick="togChk(\''+p[0]+'\')">'+
+      '<span class="cb">✓</span><span>'+p[2]+'</span>'+(ts?'<span class="cd">'+fmtData(isoDeTs(ts))+'</span>':'')+'</button>';
+  }).join('');
+  var n = 0; POS_CHECK.forEach(function(p){ if(fichaChk[p[0]]) n++; });
+  var nx = document.getElementById('posNx');
+  var c = editId ? db.clientes.find(function(x){return x.id===editId;}) : null;
+  if(n<POS_CHECK.length) nx.innerHTML = '<b style="color:var(--tx)">'+n+' de '+POS_CHECK.length+'</b> — contato diário até completar.';
+  else{
+    var prox = (c && c.fech && chkCompleto(c.fech)) ? proximoSemanalISO(c) : isoMaisDias(7);
+    nx.innerHTML = '<b style="color:var(--green)">Checklist completo</b> — contato semanal. Próximo: '+fmtDataFull(prox)+'.';
+  }
+  var lp = document.getElementById('listaPv');
+  if(!fichaPv.length){ lp.innerHTML = '<div style="font-size:12.5px; color:var(--tx3); margin-top:8px">Nenhum relatório ainda. O contato semanal da agenda também grava aqui.</div>'; return; }
+  var ordem = fichaPv.map(function(x,i){ return {x:x, i:i}; }).sort(function(a,b){ return b.x.ts-a.x.ts; });
+  lp.innerHTML = ordem.map(function(o){
+    return '<div class="pvitem"><div class="pvd">'+fmtDataFull(isoDeTs(o.x.ts))+(o.x.novo?' · salve pra guardar':'')+'</div>'+
+      '<div class="pvt">'+esc(o.x.t)+'</div>'+
+      '<div class="pvb"><button type="button" class="minibtn" onclick="copiarPv('+o.i+')">Copiar</button>'+
+      '<button type="button" class="minibtn" onclick="rmPv('+o.i+')">Apagar</button></div></div>';
+  }).join('');
+}
+function togChk(k){
+  if(fichaChk[k]) delete fichaChk[k];
+  else fichaChk[k] = Date.now();
+  renderPosVenda();
+}
+function addPv(){
+  var inp = document.getElementById('cPvNovo');
+  var t = inp.value.trim();
+  if(!t){ toast('Escreva a situação'); return; }
+  fichaPv.push({ts:Date.now(), t:t, novo:true});
+  inp.value = '';
+  renderPosVenda();
+}
+function rmPv(i){
+  if(!confirm('Apagar este relatório?')) return;
+  fichaPv.splice(i,1); renderPosVenda();
+}
+function copiarPv(i){
+  var x = fichaPv[i]; if(!x) return;
+  copiarTexto(textoPosVenda(x.t, document.getElementById('cNome').value.trim()), 'Relatório do pós-venda copiado');
+}
+function copiarRelFech(){
+  var c = editId ? db.clientes.find(function(x){return x.id===editId;}) : null;
+  var t = c ? primeiraEntrada(c,['fechou']) : 0;
+  var dataIso = t ? isoDeTs(t) : (document.getElementById('cDataContato').value || hojeISO());
+  copiarTexto(textoRelFech(document.getElementById('cRelFech').value.trim(), dataIso,
+    document.getElementById('cNome').value.trim(), document.getElementById('cRepF').value.trim(),
+    Number(soDigitos(document.getElementById('cCota').value))), 'Relatório de fechamento copiado');
 }
 function viewComParc(){
   var el = document.getElementById('comParcView');
@@ -2699,6 +2959,8 @@ function abrirFicha(id){
   selEquipe();
   document.getElementById('cOrigem').value = c?origemChave(c):'outros';
   document.getElementById('cRepassador').value = c?(c.repassador||''):'';
+  document.getElementById('cObjetivo').value = c?objetivoChave(c):'carro';
+  atualizaObjetivo();
   document.getElementById('cVeiculo').value = c?(c.veiculo||''):'';
   document.getElementById('cValorVeiculo').value = (c&&c.valorVeiculo!=null)?c.valorVeiculo:'';
   document.getElementById('cAnuncio').value = c?(c.anuncio||''):'';
@@ -2720,14 +2982,17 @@ function abrirFicha(id){
   document.getElementById('cTotalParc').value = f.totalParc!=null?f.totalParc:'';
   document.getElementById('cAssembDia').value = f.assembDia!=null?f.assembDia:'';
   fichaEstorno = (f.estornada===true||f.estornada===false) ? f.estornada : null;
-  renderEstorno();
+  fichaEntrada = (c && (c.entrada==='com'||c.entrada==='sem')) ? c.entrada : null;
+  fichaChk = {}; if(f.chk) for(var kc in f.chk) fichaChk[kc] = f.chk[kc];
+  fichaPv = (f.pv||[]).map(function(x){ return {ts:x.ts, t:x.t}; });
+  document.getElementById('cRelFech').value = f.rel||'';
+  document.getElementById('cPvNovo').value = '';
+  renderEstorno(); renderEntrada(); renderPosVenda();
   viewComissao(); renderParcProg();
   var inf = (c&&c.info)||{requisitos:{},dados:[]};
   var r = inf.requisitos||{};
   function tf(v){ return (v===true||v===false)?v:null; }
-  fichaReq = {maos:tf(r.entrada_em_maos), interesse:tf(r.interesse), tempo:tf(r.tempo), prioridade:tf(r.prioridade)};
-  document.getElementById('rTem').value = r.entrada_tem!=null?r.entrada_tem:'';
-  document.getElementById('rPrecisa').value = r.entrada_precisa!=null?r.entrada_precisa:'';
+  fichaReq = {maos:tf(r.entrada_em_maos)};
   fichaDados = (inf.dados||[]).map(function(d){ return {titulo:d.titulo, texto:d.texto}; });
   document.getElementById('cProblemas').value = inf.problemas||'';
   document.getElementById('cNota').value = inf.nota||'';
@@ -2744,7 +3009,7 @@ function abrirFicha(id){
   fichaTab('ficha');
   renderPromAlerta(c);
   renderProxAviso();
-  renderTgls(); renderDados(); viewEntrada(); atualizaCond(); renderLigInfo();
+  renderTgls(); renderDados(); atualizaCond(); renderLigInfo();
   var ov = document.getElementById('ovFicha');
   ov.classList.add('show');
   ov.scrollTop = 0;
@@ -2824,7 +3089,7 @@ var ICONES_HIST = {
   nao_compareceu:'✖', fila_dispensada:'–', lembrete_expirado:'–',
   fila_ok:'✓', assembleia:'◇', contemplado:'★', cancelamento:'✕',
   tarefa_feita:'✓', tarefa_nao_feita:'✕', parcela_paga:'$', parcela_cobrada:'$',
-  meta_batida:'★', meta_concluida:'★', relatorio_dia:'▤'
+  meta_batida:'★', meta_concluida:'★', relatorio_dia:'▤', pos_venda:'♥'
 };
 function eventosGlobaisCliente(lista, c){
   var out = [];
@@ -2977,6 +3242,8 @@ function salvarFicha(){
   c.nome = document.getElementById('cNome').value.trim();
   c.origem = origK;
   c.repassador = origK==='repasse' ? repassador : '';
+  c.objetivo = document.getElementById('cObjetivo').value || 'carro';
+  c.entrada = fichaEntrada;
   c.veiculo = document.getElementById('cVeiculo').value.trim();
   c.anuncio = document.getElementById('cAnuncio').value.trim().slice(0,80);
   var vv = soDigitos(document.getElementById('cValorVeiculo').value);
@@ -3004,20 +3271,19 @@ function salvarFicha(){
       totalParc: Number(soDigitos(document.getElementById('cTotalParc').value)) || null,
       parcPagas: (c.fech && c.fech.parcPagas) || 0,
       pgs: (c.fech && c.fech.pgs) ? c.fech.pgs.slice() : [],
-      estornada: catK==='cancelou' ? fichaEstorno : ((c.fech && c.fech.estornada) || false)
+      estornada: catK==='cancelou' ? fichaEstorno : ((c.fech && c.fech.estornada) || false),
+      chk: (function(){ var o = {}; for(var k in fichaChk) o[k] = fichaChk[k]; return o; })(),
+      rel: document.getElementById('cRelFech').value.trim() || null,
+      pv: fichaPv.map(function(x){ return {ts:x.ts, t:x.t}; }),
+      semUlt: (c.fech && c.fech.semUlt) || null
     };
     ajustaPgs(c.fech, c.fech.parcPagas, tsEv, true);
   }
   c.dataContato = document.getElementById('cDataContato').value || c.dataContato || hojeISO();
   if(!c.info) c.info = {requisitos:{},dados:[]};
-  c.info.requisitos = {
-    entrada_tem: soDigitos(document.getElementById('rTem').value)?Number(soDigitos(document.getElementById('rTem').value)):null,
-    entrada_precisa: soDigitos(document.getElementById('rPrecisa').value)?Number(soDigitos(document.getElementById('rPrecisa').value)):null,
-    entrada_em_maos: fichaReq.maos!=null?fichaReq.maos:null,
-    interesse: fichaReq.interesse!=null?fichaReq.interesse:null,
-    tempo: fichaReq.tempo!=null?fichaReq.tempo:null,
-    prioridade: fichaReq.prioridade!=null?fichaReq.prioridade:null
-  };
+  /* interesse, tempo, prioridade e valores de entrada saíram da tela: o que já estava gravado fica guardado */
+  if(!c.info.requisitos) c.info.requisitos = {};
+  c.info.requisitos.entrada_em_maos = fichaReq.maos!=null?fichaReq.maos:null;
   c.info.problemas = document.getElementById('cProblemas').value.trim();
   c.info.nota = document.getElementById('cNota').value.trim();
   c.info.dados = fichaDados.slice();
@@ -3055,6 +3321,10 @@ function salvarFicha(){
   if(catMudou && catK==='cancelou')
     logH('cancelamento','Cancelou — '+nomeCli(c)+' — '+c.numero+' — cota '+fmtMoney((c.fech&&c.fech.cota)||0)+
       ' — comissão '+(estornou(c)?'estornada':'mantida')+(c.detalhe?'. '+c.detalhe:''), c, tsEv);
+  if(cat.extra && cat.extra.indexOf('f')>=0) fichaPv.forEach(function(x){
+    if(x.novo) logH('pos_venda','Pós-venda — '+nomeCli(c)+' — '+c.numero+': '+x.t, c, x.ts);
+  });
+  fichaPv = [];
   if(!novo && c.proximo.data && c.proximo.data>hojeISO()) marcarFeito(c.id);
   save(c); fecharFicha(); renderList(); renderDash(); renderFech(); renderFila();
   pedirUndo((novo?'Cliente cadastrado: ':'Cliente salvo: ')+nomeCli(c), snapSalvar);
@@ -3180,9 +3450,23 @@ function importarJSON(){
         db.equipe.push(c.repassador); db.equipe.sort(function(a,b){return a.localeCompare(b,'pt-BR');});
       }
     }
-    if(d.veiculo!=null && d.veiculo!=='') c.veiculo = String(d.veiculo);
+    /* "veiculo" e "valor_veiculo" continuam aceitos: prompt antigo ainda manda assim */
+    if(d.objetivo!=null && d.objetivo!==''){
+      var okObj = String(d.objetivo).toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(OBJETIVOS[okObj]) c.objetivo = okObj;
+      else erros.push('Aviso item '+(i+1)+': objetivo "'+d.objetivo+'" desconhecido, mantive '+OBJETIVOS[objetivoChave(c)].lb);
+    }
+    var descObj = d.descricao!=null && d.descricao!=='' ? d.descricao : d.veiculo;
+    if(descObj!=null && descObj!=='') c.veiculo = String(descObj);
     if(d.anuncio!=null && d.anuncio!=='') c.anuncio = String(d.anuncio).slice(0,80);
-    if(d.valor_veiculo!=null && d.valor_veiculo!=='') c.valorVeiculo = Number(soDigitos(d.valor_veiculo))||null;
+    var valObj = d.valor_objetivo!=null && d.valor_objetivo!=='' ? d.valor_objetivo : d.valor_veiculo;
+    if(valObj!=null && valObj!=='') c.valorVeiculo = Number(soDigitos(valObj))||null;
+    if(d.tipo_entrada!=null && d.tipo_entrada!==''){
+      var te = String(d.tipo_entrada).toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'_');
+      if(te==='sem_adesao' || te==='sem') c.entrada = 'sem';
+      else if(te==='com_entrada' || te==='com') c.entrada = 'com';
+      else erros.push('Aviso item '+(i+1)+': tipo_entrada "'+d.tipo_entrada+'" desconhecido');
+    }
     c.categoria = catK;
     if(d.detalhe!=null) c.detalhe = String(d.detalhe);
     if(cat.extra==='d'){ c.data = data; if(d.hora!==undefined) c.hora = d.hora!=null?String(d.hora):''; }
@@ -3243,10 +3527,25 @@ function importarJSON(){
       if(fx.total_parcelas!==undefined && fx.total_parcelas!=null) c.fech.totalParc = Number(soDigitos(fx.total_parcelas))||null;
       if(fx.parcelas_pagas!==undefined && fx.parcelas_pagas!=null) c.fech.parcPagas = Number(soDigitos(fx.parcelas_pagas))||0;
       if(fx.estornada!==undefined) c.fech.estornada = fx.estornada===true?true:(fx.estornada===false?false:null);
+      if(fx.relatorio!==undefined && fx.relatorio!=null && fx.relatorio!=='') c.fech.rel = String(fx.relatorio);
       if(c.fech.parcPagas==null) c.fech.parcPagas = 0;
       ajustaPgs(c.fech, c.fech.parcPagas, tsEv, true);
     }
     if(catK==='cancelou' && c.fech && c.fech.estornada==null) c.fech.estornada = sugestaoEstorno(c);
+    var pvTxt = d.pos_venda!=null ? String(d.pos_venda).trim() : '';
+    if(pvTxt){
+      if(catK!=='fechou' && catK!=='cancelou') erros.push('Aviso item '+(i+1)+' ('+(c.nome||c.numero)+'): pós-venda ignorado — cliente não está como fechou');
+      else{
+        if(!c.fech) c.fech = {};
+        if(!c.fech.pv) c.fech.pv = [];
+        var diaPv = isoDeTs(tsEv);
+        var repetido = c.fech.pv.some(function(x){ return x.t===pvTxt && isoDeTs(x.ts)===diaPv; });
+        if(!repetido){
+          c.fech.pv.push({ts:tsEv, t:pvTxt});
+          logH('pos_venda','Pós-venda — '+nomeCli(c)+' — '+c.numero+': '+pvTxt, c, tsEv);
+        }
+      }
+    }
     if(catK==='fechou' && (!c.fech || !c.fech.cota)) erros.push('Aviso item '+(i+1)+' ('+(c.nome||c.numero)+'): fechou sem cota — preencha depois na ficha');
     var fonteProx = d.proximo || d.lembrete;
     if(fonteProx){
@@ -3320,8 +3619,10 @@ function copiarJSON(){
     nome: c.nome||null,
     origem: origemChave(c),
     repassador: c.repassador||null,
-    veiculo: c.veiculo||null,
-    valor_veiculo: c.valorVeiculo!=null?c.valorVeiculo:null,
+    objetivo: objetivoChave(c),
+    descricao: c.veiculo||null,
+    valor_objetivo: c.valorVeiculo!=null?c.valorVeiculo:null,
+    tipo_entrada: c.entrada==='sem'?'sem_adesao':(c.entrada==='com'?'com_entrada':null),
     anuncio: c.anuncio||null,
     categoria: c.categoria,
     detalhe: c.detalhe||null,
@@ -3332,12 +3633,7 @@ function copiarJSON(){
     representante: c.representante||null,
     informacoes: {
       requisitos: {
-        entrada_disponivel: r.entrada_tem!=null?r.entrada_tem:null,
-        entrada_necessaria: r.entrada_precisa!=null?r.entrada_precisa:null,
-        entrada_em_maos: r.entrada_em_maos!=null?r.entrada_em_maos:null,
-        interesse: r.interesse!=null?r.interesse:null,
-        tempo: r.tempo!=null?r.tempo:null,
-        prioridade: r.prioridade!=null?r.prioridade:null
+        entrada_em_maos: r.entrada_em_maos!=null?r.entrada_em_maos:null
       },
       problemas: inf.problemas||null,
       nota: inf.nota||null,
@@ -3354,7 +3650,8 @@ function copiarJSON(){
       assembleia_dia: c.fech.assembDia||null,
       total_parcelas: c.fech.totalParc||null,
       parcelas_pagas: c.fech.parcPagas||0,
-      estornada: (c.fech.estornada===true||c.fech.estornada===false)?c.fech.estornada:null
+      estornada: (c.fech.estornada===true||c.fech.estornada===false)?c.fech.estornada:null,
+      relatorio: c.fech.rel||null
     } : null,
     proximo: (c.proximo && (c.proximo.data||c.proximo.motivo)) ?
       {data:c.proximo.data||null, hora:c.proximo.hora||null, motivo:c.proximo.motivo||null, comigo:c.proximo.comigo!==false} : null,
@@ -3392,7 +3689,8 @@ function renderFech(){
       '<td onclick="abrirFicha(\''+c.id+'\')">'+esc(f.cpf||'—')+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+esc(c.numero)+'</td>'+
       '<td style="color:var(--blue); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(f.cota||0)+'</td>'+
-      '<td style="color:var(--green); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(comissaoCota(c))+'</td>'+
+      '<td style="color:var(--green); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(comissaoCota(c))+
+        (semAdesao(c)?'<div style="font-size:11px; color:var(--tx3); font-weight:500; white-space:nowrap">sem adesão · de '+fmtMoney(comissaoCotaTotal(c))+'</div>':'')+'</td>'+
       '<td style="color:var(--teal); font-weight:600" onclick="abrirFicha(\''+c.id+'\')">'+fmtMoney(comissaoParcelas(c,null,null))+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+(f.contemplacao?fmtDataFull(f.contemplacao):'—')+'</td>'+
       '<td onclick="abrirFicha(\''+c.id+'\')">'+(asm?fmtDataFull(asm):(f.assembDia?'dia '+f.assembDia:'—'))+'</td>'+
@@ -3412,6 +3710,8 @@ function dadosPlanilha(){
       'Vendedor': VENDEDOR,
       'Cliente': c.nome||'(sem nome)',
       'Situação': c.categoria==='cancelou' ? ('Cancelou'+(estornou(c)?' (comissão estornada)':' (comissão mantida)')) : 'Ativo',
+      'Entrada': c.entrada==='sem' ? 'Sem adesão' : (c.entrada==='com' ? 'Com entrada' : ''),
+      'Objetivo': objetivoTxt(c, false),
       'CPF': f.cpf||'',
       'Número': c.numero,
       'Cota (R$)': f.cota||0,
@@ -3433,7 +3733,7 @@ function baixarPlanilha(){
   if(!rows.length){ toast('Nenhum fechamento pra exportar'); return; }
   function comXLSX(){
     var ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch:12},{wch:24},{wch:26},{wch:16},{wch:15},{wch:12},{wch:20},{wch:22},{wch:14},{wch:15},{wch:14},{wch:15},{wch:11},{wch:18},{wch:14},{wch:16}];
+    ws['!cols'] = [{wch:12},{wch:24},{wch:26},{wch:12},{wch:24},{wch:16},{wch:15},{wch:12},{wch:20},{wch:22},{wch:14},{wch:15},{wch:14},{wch:15},{wch:11},{wch:18},{wch:14},{wch:16}];
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Fechamentos');
     XLSX.writeFile(wb, 'fechamentos-'+VENDEDOR.toLowerCase()+'-'+hojeISO()+'.xlsx');
@@ -3676,7 +3976,7 @@ function montaPDF(iv, lista){
       fs.forEach(function(c){
         var f = c.fech||{};
         linha((c.nome||'(sem nome)')+' — '+c.numero, true);
-        linha('Cota '+fmtMoney(f.cota||0)+'   |   comissao '+fmtMoney(f.comissao!=null?f.comissao:Math.round((f.cota||0)*0.01))+
+        linha('Cota '+fmtMoney(f.cota||0)+'   |   comissao '+fmtMoney(f.comissao!=null?f.comissao:Math.round((f.cota||0)*0.01))+(semAdesao(c)?' (sem adesao, em 3x)':'')+
               (f.contemplacao?'   |   contemplacao '+fmtDataFull(f.contemplacao):'')+
               (f.parcela?'   |   parcela '+fmtMoney(f.parcela)+(f.totalParc?' ('+(f.parcPagas||0)+'/'+f.totalParc+' pagas)':''):''), false, 4);
         y += 1.5;
@@ -3694,7 +3994,7 @@ function montaPDF(iv, lista){
       titulo('Dia a dia');
       var relevantes = lista.filter(function(x){
         if(DESTAQUES.indexOf(x.tipo)>=0) return true;
-        if(x.tipo==='promessa' || x.tipo==='tarefa_nao_feita' || x.tipo==='parcela_paga') return true;
+        if(x.tipo==='promessa' || x.tipo==='tarefa_nao_feita' || x.tipo==='parcela_paga' || x.tipo==='pos_venda') return true;
         if(x.tipo==='cliente_modificado' && x.m && x.m.length) return true;
         return false;
       });
@@ -3862,6 +4162,9 @@ function iniciar(){
   selOrigens('cOrigem', null);
   selOrigens('fOrig','Todas as origens');
   selOrigens('dashOrig','Todas as origens');
+  selObjetivos('cObjetivo', null);
+  selObjetivos('fObj','Todos os objetivos');
+  selObjetivos('dashObj','Todos os objetivos');
   selEquipe(); renderEquipe();
   renderPeriod(); relogio(); renderDash(); renderList(); trocaTab('fila');
   expirarPendencias();
