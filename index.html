@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0E1113">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Painel de Vendas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -224,6 +225,12 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
 .undo .ux{background:none; border:none; color:var(--tx3); font-size:15px; line-height:1; padding:10px 10px; min-height:40px}
 @media(min-width:760px){ .undo{bottom:28px} }
 .fichatabs{margin:12px 0 4px}
+.loginwrap{position:fixed; inset:0; background:var(--bg); z-index:200; display:none; align-items:center; justify-content:center; padding:16px}
+.loginbox{width:100%; max-width:380px; background:var(--card); border:1px solid var(--border); border-radius:18px; padding:26px 22px 24px}
+.loginbox h1{font-family:var(--disp); font-size:24px; font-weight:600; letter-spacing:.06em; text-transform:uppercase}
+.loginbox h1 span{color:var(--amber)}
+.loginbox .lsub{font-size:13px; color:var(--tx2); margin-top:4px}
+.loginbox .lerr{font-size:13px; color:var(--red); margin-top:10px; min-height:18px}
 .proxbox{background:var(--card); border:1px solid var(--border2); border-radius:12px; padding:4px 14px 15px; margin-top:18px}
 .proxbox h3{font-family:var(--disp); font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--tx2); margin:14px 0 2px}
 .proxaviso{background:rgba(255,176,32,.10); border:1px solid rgba(255,176,32,.5); border-radius:10px; padding:10px 12px; margin-top:12px; font-size:12.5px; color:var(--tx2); line-height:1.45}
@@ -318,6 +325,25 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
 </style>
 </head>
 <body>
+
+<div class="loginwrap" id="telaLogin">
+  <div class="loginbox">
+    <h1>Painel <span>de vendas</span></h1>
+    <div id="lgForm">
+      <div class="lsub">Entre com sua conta pra abrir a carteira.</div>
+      <label>E-mail</label>
+      <input id="lgEmail" type="email" autocomplete="username" inputmode="email">
+      <label>Senha</label>
+      <input id="lgSenha" type="password" autocomplete="current-password">
+      <button class="btn save" id="lgBtn">Entrar</button>
+      <div class="lerr" id="lgErro"></div>
+    </div>
+    <div id="lgFalha" style="display:none">
+      <div class="lsub" style="margin-top:12px; line-height:1.5">Não consegui conectar à nuvem e não há cópia salva neste aparelho. Confira a internet e tente de novo.</div>
+      <button class="btn save" onclick="location.reload()">Tentar de novo</button>
+    </div>
+  </div>
+</div>
 
 <div class="wrap">
   <header class="top">
@@ -739,6 +765,10 @@ body.travado{overflow:hidden; position:fixed; width:100%; left:0; right:0}
     <div id="infoHist" style="font-size:13px; color:var(--tx2); line-height:1.55"></div>
     <button class="btn ghost" onclick="compactarAgora()">Compactar histórico agora</button>
 
+    <div class="agh" style="margin-top:22px">Conta</div>
+    <div id="infoConta" style="font-size:13px; color:var(--tx2); line-height:1.55"></div>
+    <button class="btn ghost" onclick="sairConta()">Sair desta conta</button>
+
     <div class="agh" style="margin-top:22px">Zona de risco</div>
     <div style="font-size:13.5px; color:var(--tx2); line-height:1.5">Zerar o sistema apaga <b style="color:var(--tx)">tudo</b>: clientes, fechamentos, histórico, tarefas e meta. Não tem volta — se quiser guardar, faça um Backup antes.</div>
     <button class="btn del" onclick="resetarTudo()">Zerar todas as informações</button>
@@ -997,7 +1027,8 @@ function carregarDe(d){
     ultimoBackup: d.ultimoBackup||0
   };
   chunkCache = {};
-  mapaSalvo = {}; arquivoSalvo = {};
+  for(var k in mapaSalvo) mapaSalvo[k] = 'x';
+  for(var a in arquivoSalvo) arquivoSalvo[a] = 0;
 }
 function serializar(){
   return {
@@ -1009,57 +1040,72 @@ function serializar(){
   };
 }
 
-/* ======== BANCO (IndexedDB, com localStorage como reserva) ======== */
-var IDB_NOME = 'crm_pedro', IDB_VER = 1;
-var idb = null, usandoIDB = false, semEspaco = false;
-var sujos = {}, mapaSalvo = {}, arquivoSalvo = {}, flushTimer = null;
-function idbAbrir(){
-  return new Promise(function(res, rej){
-    if(typeof indexedDB==='undefined' || !indexedDB) return rej(new Error('sem indexedDB'));
-    var req;
-    try{ req = indexedDB.open(IDB_NOME, IDB_VER); }catch(e){ return rej(e); }
-    req.onupgradeneeded = function(ev){
-      var d = ev.target.result;
-      if(!d.objectStoreNames.contains('clientes')){
-        var s = d.createObjectStore('clientes', {keyPath:'id'});
-        s.createIndex('numero','numero',{unique:false});
-        s.createIndex('categoria','categoria',{unique:false});
-      }
-      if(!d.objectStoreNames.contains('eventos')) d.createObjectStore('eventos', {keyPath:'id'});
-      if(!d.objectStoreNames.contains('config')) d.createObjectStore('config', {keyPath:'k'});
-    };
-    req.onsuccess = function(){ res(req.result); };
-    req.onerror = function(){ rej(req.error); };
-    req.onblocked = function(){ rej(new Error('bloqueado')); };
-  });
+/* ======== BANCO (Supabase na nuvem, com cópia de segurança no aparelho) ======== */
+var SUPA_URL = 'https://dhevslklclzcpgshmbpj.supabase.co';
+var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZXZzbGtsY2x6Y3Bnc2htYnBqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMDU3NDcsImV4cCI6MjEwODU4MTc0N30.SKQaRDgfaO8SlwgSCA2DPoWcdeZx5RZxDOuqIXItsy4';
+var CACHE_KEY = 'crm_pedro_nuvem_cache';
+var sb = null, usuario = null;
+var usandoIDB = false, semEspaco = false, offline = false; /* usandoIDB = conectado à nuvem */
+var sujos = {}, mapaSalvo = {}, arquivoSalvo = {}, flushTimer = null, retryTimer = null;
+function sbIniciar(){
+  if(!sb){
+    if(!window.supabase) throw new Error('sem biblioteca');
+    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
+  }
+  return sb;
+}
+function chk(r){ if(r.error) throw r.error; return r.data; }
+function lerTudo(store){
+  if(!sb) return Promise.reject(new Error('offline'));
+  var cols = store==='config' ? 'k,v' : 'id,dados';
+  var out = [], passo = 1000;
+  function pag(i){
+    return sb.from(store).select(cols).order(store==='config'?'k':'id').range(i, i+passo-1).then(function(r){
+      var d = chk(r)||[];
+      out = out.concat(d);
+      return d.length===passo ? pag(i+passo) : out;
+    });
+  }
+  return pag(0);
 }
 function idbLer(store){
-  return new Promise(function(res, rej){
-    try{
-      var tx = idb.transaction(store, 'readonly');
-      var r = tx.objectStore(store).getAll();
-      r.onsuccess = function(){ res(r.result||[]); };
-      r.onerror = function(){ rej(r.error); };
-    }catch(e){ rej(e); }
+  return lerTudo(store).then(function(rows){
+    return store==='config' ? rows : rows.map(function(r){ return r.dados; });
   });
+}
+function linhaDe(store, x){
+  if(store==='clientes'){
+    var t = new Date(x.atualizadoEm||x.criadoEm||Date.now());
+    return {id:x.id, owner:usuario.id, sid:x.sid||null, numero:x.numero||null, nome:x.nome||null,
+            categoria:x.categoria||null, dados:x, atualizado_em:isNaN(t)?new Date().toISOString():t.toISOString()};
+  }
+  if(store==='eventos') return {id:x.id, owner:usuario.id, dados:x};
+  return {owner:usuario.id, k:x.k, v:x.v===undefined?null:x.v};
 }
 function idbGravar(store, itens, apagar){
-  return new Promise(function(res, rej){
-    if(!(itens&&itens.length) && !(apagar&&apagar.length)) return res();
-    try{
-      var tx = idb.transaction(store, 'readwrite');
-      var os = tx.objectStore(store);
-      (itens||[]).forEach(function(x){ os.put(x); });
-      (apagar||[]).forEach(function(k){ os.delete(k); });
-      tx.oncomplete = function(){ res(); };
-      tx.onerror = function(){ rej(tx.error); };
-      tx.onabort = function(){ rej(tx.error); };
-    }catch(e){ rej(e); }
-  });
+  if(!sb || !usuario) return Promise.reject(new Error('offline'));
+  var ps = [];
+  if(itens && itens.length){
+    var linhas = itens.map(function(x){ return linhaDe(store, x); });
+    for(var i=0;i<linhas.length;i+=300)
+      ps.push(sb.from(store).upsert(linhas.slice(i,i+300), {onConflict: store==='config'?'owner,k':'id'}).then(chk));
+  }
+  if(apagar && apagar.length){
+    var campo = store==='config' ? 'k' : 'id';
+    for(var j=0;j<apagar.length;j+=200)
+      ps.push(sb.from(store).delete().in(campo, apagar.slice(j,j+200)).then(chk));
+  }
+  return Promise.all(ps);
 }
 function salvaLocal(){
-  try{ localStorage.setItem('crm_pedro_v1', JSON.stringify(serializar())); return true; }
-  catch(e){ avisarSemEspaco(); return false; }
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(), uid:usuario?usuario.id:null, d:serializar(), versoes:mapaSalvo}));
+    return true;
+  }catch(e){ return false; }
+}
+function lerCache(){
+  try{ var raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
 }
 function coletarSujos(){
   var put = [], vistos = {};
@@ -1084,7 +1130,7 @@ function configParaGravar(){
   ];
 }
 function flush(){
-  if(!usandoIDB) return Promise.resolve(salvaLocal());
+  if(!usandoIDB){ salvaLocal(); return Promise.resolve(); }
   var d = coletarSujos();
   var chunks = (db.arquivo||[]).filter(function(ch){ return !arquivoSalvo[ch.id]; });
   var idsArq = {};
@@ -1098,15 +1144,23 @@ function flush(){
   ]).then(function(){
     chunks.forEach(function(ch){ arquivoSalvo[ch.id] = 1; });
     apagarArq.forEach(function(k){ delete arquivoSalvo[k]; });
-    semEspaco = false;
-  }).catch(function(e){
-    if(e && (e.name==='QuotaExceededError' || String(e).indexOf('quota')>=0)) avisarSemEspaco();
-    else { usandoIDB = false; salvaLocal(); toast('Erro ao gravar — usando a memória do navegador'); }
+    clearTimeout(retryTimer);
+    if(offline){ offline = false; toast('Conexão de volta — tudo salvo na nuvem'); renderAvisos(); }
+    salvaLocal();
+  }).catch(function(){
+    /* não subiu: marca de novo como pendente e tenta daqui a pouco */
+    d.put.forEach(function(c){ delete mapaSalvo[c.id]; });
+    d.del.forEach(function(id){ mapaSalvo[id] = 'x'; });
+    salvaLocal();
+    if(!offline){ offline = true; toast('Sem internet — salvo no aparelho, envio quando voltar'); renderAvisos(); }
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(flush, 15000);
   });
 }
 function flushCompleto(){
-  if(!usandoIDB) return Promise.resolve(salvaLocal());
-  mapaSalvo = {}; arquivoSalvo = {};
+  /* reenvia tudo; o que sumiu da memória é apagado da nuvem */
+  for(var k in mapaSalvo) mapaSalvo[k] = 'x';
+  for(var a in arquivoSalvo) arquivoSalvo[a] = 0;
   return flush();
 }
 function save(c){
@@ -1116,53 +1170,209 @@ function save(c){
   flushTimer = setTimeout(flush, 250);
 }
 function gravarJa(){ clearTimeout(flushTimer); return flush(); }
-function carregarTudo(){
-  return idbAbrir().then(function(d){
-    idb = d; usandoIDB = true;
-    return Promise.all([idbLer('clientes'), idbLer('eventos'), idbLer('config')]);
-  }).then(function(r){
+
+/* ======== LOGIN ======== */
+function pedirLogin(){
+  return new Promise(function(res){
+    var w = document.getElementById('telaLogin');
+    var bt = document.getElementById('lgBtn');
+    var er = document.getElementById('lgErro');
+    w.style.display = 'flex';
+    function erro(t){ er.textContent = t; }
+    function entrar(){
+      var em = document.getElementById('lgEmail').value.trim();
+      var se = document.getElementById('lgSenha').value;
+      if(!em || !se){ erro('Preencha e-mail e senha'); return; }
+      erro(''); bt.disabled = true; bt.textContent = 'Entrando…';
+      sb.auth.signInWithPassword({email:em, password:se}).then(function(r){
+        bt.disabled = false; bt.textContent = 'Entrar';
+        if(r.error){
+          erro(/invalid/i.test(r.error.message) ? 'E-mail ou senha incorretos' : 'Não consegui entrar: '+r.error.message);
+          return;
+        }
+        usuario = r.data.user;
+        w.style.display = 'none';
+        res();
+      }).catch(function(){ bt.disabled = false; bt.textContent = 'Entrar'; erro('Sem conexão com a internet'); });
+    }
+    bt.onclick = entrar;
+    document.getElementById('lgSenha').onkeydown = function(e){ if(e.key==='Enter') entrar(); };
+    setTimeout(function(){ try{ document.getElementById('lgEmail').focus(); }catch(e){} }, 100);
+  });
+}
+function mostrarErroCarga(){
+  var w = document.getElementById('telaLogin');
+  w.style.display = 'flex';
+  document.getElementById('lgForm').style.display = 'none';
+  document.getElementById('lgFalha').style.display = '';
+}
+function sairConta(){
+  if(!confirm('Sair da conta neste aparelho?')) return;
+  gravarJa().then(function(){ return sb.auth.signOut(); }).then(function(){
+    try{ localStorage.removeItem(CACHE_KEY); }catch(e){}
+    location.reload();
+  });
+}
+
+/* ======== CARREGAR ======== */
+function aplicarNuvem(r, cfg){
+  carregarDe({
+    clientes: r[0], arquivo: r[1],
+    hp: cfg.hp, ligacoes: cfg.ligacoes, ligAtendidas: cfg.ligAtendidas,
+    tarefas: cfg.tarefas, pendentes: cfg.pendentes, meta: cfg.meta,
+    metaBase: cfg.metaBase, nextSid: cfg.nextSid, equipe: cfg.equipe,
+    fila: cfg.fila, ultimoBackup: cfg.ultimoBackup
+  });
+  mapaSalvo = {}; arquivoSalvo = {};
+  db.clientes.forEach(function(c){ mapaSalvo[c.id] = (c.atualizadoEm||c.criadoEm||0)+''; });
+  (db.arquivo||[]).forEach(function(ch){ arquivoSalvo[ch.id] = 1; });
+  salvaLocal();
+}
+function lerNuvem(){
+  return Promise.all([idbLer('clientes'), idbLer('eventos'), idbLer('config')]).then(function(r){
     var cfg = {};
     r[2].forEach(function(x){ cfg[x.k] = x.v; });
-    if(!cfg.migrado){
+    return {r:r, cfg:cfg};
+  });
+}
+function lerDadosAntigos(){
+  /* dados da versão anterior, guardados só neste aparelho */
+  return new Promise(function(res){
+    function doLocalStorage(){
       var raw = null;
       try{ raw = localStorage.getItem('crm_pedro_v1'); }catch(e){}
-      var antigo = {};
-      if(raw){ try{ antigo = JSON.parse(raw); }catch(e){ antigo = {}; } }
-      carregarDe(antigo);
-      var quantos = db.clientes.length;
-      return flushCompleto().then(function(){
-        return idbLer('clientes');
-      }).then(function(conf){
-        if(conf.length !== quantos){
-          usandoIDB = false;
-          toast('Migração incompleta — continuo na memória antiga, seus dados estão salvos');
-          return false;
-        }
-          return idbGravar('config', [{k:'migrado', v:{quando:Date.now(), clientes:quantos}}], []).then(function(){ return true; });
+      try{ res(raw ? JSON.parse(raw) : null); }catch(e){ res(null); }
+    }
+    if(typeof indexedDB==='undefined' || !indexedDB) return doLocalStorage();
+    var req;
+    try{ req = indexedDB.open('crm_pedro'); }catch(e){ return doLocalStorage(); }
+    req.onerror = doLocalStorage;
+    req.onblocked = doLocalStorage;
+    req.onsuccess = function(){
+      var d = req.result, nomes = ['clientes','eventos','config'];
+      for(var i=0;i<nomes.length;i++) if(!d.objectStoreNames.contains(nomes[i])){ d.close(); return doLocalStorage(); }
+      var out = {}, tx;
+      try{ tx = d.transaction(nomes, 'readonly'); }catch(e){ d.close(); return doLocalStorage(); }
+      nomes.forEach(function(n){
+        var q = tx.objectStore(n).getAll();
+        q.onsuccess = function(){ out[n] = q.result||[]; };
       });
-    }
-    if(cfg.migrado.quando && (Date.now()-cfg.migrado.quando) > 30*864e5){
-      try{ if(localStorage.getItem('crm_pedro_v1')) localStorage.removeItem('crm_pedro_v1'); }catch(e){}
-    }
-    carregarDe({
-      clientes: r[0], arquivo: r[1],
-      hp: cfg.hp, ligacoes: cfg.ligacoes, ligAtendidas: cfg.ligAtendidas,
-      tarefas: cfg.tarefas, pendentes: cfg.pendentes, meta: cfg.meta,
-      metaBase: cfg.metaBase, nextSid: cfg.nextSid, equipe: cfg.equipe,
-      fila: cfg.fila, ultimoBackup: cfg.ultimoBackup
-    });
-    db.clientes.forEach(function(c){ mapaSalvo[c.id] = (c.atualizadoEm||c.criadoEm||0)+''; });
-    (db.arquivo||[]).forEach(function(ch){ arquivoSalvo[ch.id] = 1; });
-    return true;
-  }).catch(function(){
-    usandoIDB = false;
-    var raw = null;
-    try{ raw = localStorage.getItem('crm_pedro_v1'); }
-    catch(e){ setTimeout(function(){ toast('Não consegui ler a memória do navegador'); }, 1200); }
-    try{ carregarDe(raw?JSON.parse(raw):{}); }
-    catch(e){ carregarDe({}); setTimeout(function(){ toast('Dados salvos ilegíveis — restaure um backup'); }, 1200); }
-    return false;
+      tx.oncomplete = function(){
+        d.close();
+        var cfg = {};
+        (out.config||[]).forEach(function(x){ cfg[x.k] = x.v; });
+        if(!cfg.migrado) return doLocalStorage();
+        res({clientes:out.clientes, arquivo:out.eventos, hp:cfg.hp, ligacoes:cfg.ligacoes, ligAtendidas:cfg.ligAtendidas,
+             tarefas:cfg.tarefas, pendentes:cfg.pendentes, meta:cfg.meta, metaBase:cfg.metaBase, nextSid:cfg.nextSid,
+             equipe:cfg.equipe, fila:cfg.fila, ultimoBackup:cfg.ultimoBackup});
+      };
+      tx.onerror = function(){ d.close(); doLocalStorage(); };
+    };
   });
+}
+function migrarParaNuvem(nuvem){
+  return lerDadosAntigos().then(function(antigo){
+    var n = (antigo && antigo.clientes) ? antigo.clientes.length : 0;
+    if(!n || !confirm('Encontrei '+n+' cliente(s) salvos neste aparelho. Enviar tudo pra nuvem agora?')){
+      aplicarNuvem(nuvem.r, nuvem.cfg);
+      return idbGravar('config', [{k:'migrado', v:{quando:Date.now(), clientes:db.clientes.length, origem:'nuvem'}}], []);
+    }
+    carregarDe(antigo);
+    mapaSalvo = {}; arquivoSalvo = {};
+    return flush().then(function(){
+      if(offline) throw new Error('migracao');
+      return lerNuvem();
+    }).then(function(novo){
+      if(novo.r[0].length < n) throw new Error('migracao');
+      aplicarNuvem(novo.r, novo.cfg);
+      return idbGravar('config', [{k:'migrado', v:{quando:Date.now(), clientes:n, origem:'aparelho'}}], []);
+    }).then(function(){
+      setTimeout(function(){ toast(n+' cliente(s) enviados pra nuvem'); }, 800);
+    });
+  });
+}
+function carregarTudo(){
+  var p;
+  try{ sbIniciar(); p = sb.auth.getSession(); }
+  catch(e){ p = Promise.reject(e); }
+  return p.then(function(r){
+    var s = r.data && r.data.session;
+    if(s){ usuario = s.user; return; }
+    return pedirLogin();
+  }).then(function(){
+    usandoIDB = true;
+    return lerNuvem();
+  }).then(function(nuvem){
+    if(!nuvem.cfg.migrado) return migrarParaNuvem(nuvem);
+    aplicarNuvem(nuvem.r, nuvem.cfg);
+  }).catch(function(e){
+    /* sem internet: abre com a última cópia deste aparelho e sobe quando voltar */
+    var cache = lerCache();
+    if(cache && cache.d && (!usuario || !cache.uid || cache.uid===usuario.id) && (!e || e.message!=='migracao')){
+      if(!usuario && cache.uid) usuario = {id:cache.uid};
+      usandoIDB = true;
+      carregarDe(cache.d);
+      mapaSalvo = cache.versoes || {};
+      (db.arquivo||[]).forEach(function(ch){ arquivoSalvo[ch.id] = 1; });
+      offline = true;
+      setTimeout(function(){ toast('Sem internet — usando a cópia deste aparelho'); }, 1200);
+      return;
+    }
+    throw e;
+  });
+}
+
+/* ======== TEMPO REAL (o que o Jarvis mudar aparece aqui) ======== */
+var rrTimer = null;
+function reRender(){
+  clearTimeout(rrTimer);
+  rrTimer = setTimeout(function(){ renderList(); renderDash(); renderFech(); renderFila(); }, 300);
+}
+function recebeCliente(novo){
+  if(!novo || !novo.id) return false;
+  var i = -1;
+  for(var k=0;k<db.clientes.length;k++) if(db.clientes[k].id===novo.id){ i = k; break; }
+  if(i>=0){
+    if((db.clientes[i].atualizadoEm||0) >= (novo.atualizadoEm||0)) return false;
+    if(editId===novo.id) return false; /* ficha aberta: não atropela o que você está editando */
+    db.clientes[i] = novo;
+  }else db.clientes.push(novo);
+  if(novo.sid && novo.sid >= db.nextSid) db.nextSid = novo.sid+1;
+  mapaSalvo[novo.id] = (novo.atualizadoEm||novo.criadoEm||0)+'';
+  return true;
+}
+function ligarTempoReal(){
+  if(!sb || !usuario || offline) return;
+  sb.channel('clientes-'+usuario.id)
+    .on('postgres_changes', {event:'*', schema:'public', table:'clientes'}, function(p){
+      if(p.eventType==='DELETE'){
+        var id = p.old && p.old.id;
+        if(!id || editId===id) return;
+        var antes = db.clientes.length;
+        db.clientes = db.clientes.filter(function(c){ return c.id!==id; });
+        delete mapaSalvo[id];
+        if(db.clientes.length!==antes) reRender();
+        return;
+      }
+      if(recebeCliente(p.new && p.new.dados)) reRender();
+    })
+    .subscribe();
+}
+var ultimaSync = Date.now();
+function sincronizarNuvem(){
+  if(!sb || !usuario) return;
+  if(Date.now()-ultimaSync < 20000) return;
+  ultimaSync = Date.now();
+  gravarJa().then(function(){ return idbLer('clientes'); }).then(function(lista){
+    var mapa = {}, mudou = false;
+    lista.forEach(function(c){ mapa[c.id] = c; });
+    db.clientes = db.clientes.filter(function(c){
+      if(mapa[c.id] || mapaSalvo[c.id]===undefined || editId===c.id) return true;
+      delete mapaSalvo[c.id]; mudou = true; return false;
+    });
+    lista.forEach(function(c){ if(recebeCliente(c)) mudou = true; });
+    if(mudou) reRender();
+  }).catch(function(){});
 }
 
 /* ======== ESPAÇO E BACKUP ======== */
@@ -1220,27 +1430,18 @@ function renderAvisos(){
   var el = document.getElementById('avisos');
   if(!el) return;
   var partes = [];
+  if(offline){
+    partes.push('<div class="aviso grave"><div class="av1">Sem conexão com a nuvem</div>'+
+      '<div class="av2">Suas alterações estão guardadas neste aparelho e sobem sozinhas quando a internet voltar. Não feche o navegador limpando os dados.</div></div>');
+  }
   var dias = diasDesdeBackup();
-  if(dias===null || dias>=7){
-    partes.push('<div class="aviso grave"><div class="av1">'+(dias===null?'Você ainda não fez nenhum backup':'Último backup há '+dias+' dias')+
-      '</div><div class="av2">Se o navegador limpar os dados ou você trocar de celular, a carteira vai junto. É o único risco sem volta.</div>'+
-      '<button onclick="salvarBackup()">Salvar backup agora</button></div>');
-  }else if(dias>=1){
-    partes.push('<div class="aviso"><div class="av1">Backup de hoje ainda não foi feito</div>'+
-      '<div class="av2">Último há '+dias+' dia'+(dias>1?'s':'')+'. Um toque manda pro Drive ou pro seu WhatsApp.</div>'+
+  if(dias===null || dias>=30){
+    partes.push('<div class="aviso"><div class="av1">'+(dias===null?'Nenhum backup em arquivo ainda':'Último backup em arquivo há '+dias+' dias')+'</div>'+
+      '<div class="av2">Seus dados já ficam na nuvem. Um backup por mês é só uma segurança extra.</div>'+
       '<button onclick="salvarBackup()">Salvar backup</button></div>');
   }
   el.innerHTML = partes.join('');
-  estimarEspaco().then(function(e){
-    if(e.pct < 60) return;
-    var grave = e.pct >= 80;
-    el.innerHTML += '<div class="aviso'+(grave?' grave':'')+'"><div class="av1">Armazenamento em '+Math.round(e.pct)+'%</div>'+
-      '<div class="av2">'+tamanhoKB(e.usado)+' de '+tamanhoKB(e.cota)+' usados.'+
-      (grave?' Salve um backup agora — quando lota, o app para de gravar.':' Vale começar a acompanhar.')+'</div>'+
-      '<button onclick="salvarBackup()">Salvar backup</button></div>';
-  });
 }
-
 function migrar(){
   var mudou = false;
   var ordenados = db.clientes.slice().sort(function(a,b){ return (a.criadoEm||0)-(b.criadoEm||0); });
@@ -4121,14 +4322,12 @@ function renderInfoHist(){
   var elA = document.getElementById('infoArmazem');
   if(elA){
     var dias = diasDesdeBackup();
-    estimarEspaco().then(function(x){
-      elA.innerHTML = 'Guardando em <b style="color:var(--tx)">'+(usandoIDB?'IndexedDB':'memória do navegador')+'</b>'+
-        (usandoIDB?' (sem o limite de 5 MB).':' — limite de 5 MB, cuidado.')+'<br>'+
-        'Ocupado: '+tamanhoKB(x.usado)+' de '+tamanhoKB(x.cota)+' ('+Math.round(x.pct)+'%).<br>'+
-        'Último backup: <b style="color:'+(dias===null||dias>=7?'var(--red)':'var(--tx)')+'">'+
-        (dias===null?'nenhum ainda':(dias===0?'hoje':'há '+dias+' dia'+(dias>1?'s':'')))+'</b>.';
-    });
+    elA.innerHTML = 'Guardando na <b style="color:var(--tx)">nuvem (Supabase)</b>, com cópia neste aparelho.'+
+      (offline?'<br><span style="color:var(--red)">Sem conexão agora — vou enviar quando voltar.</span>':'<br>Tudo sincronizado.')+'<br>'+
+      'Último backup em arquivo: <b style="color:var(--tx)">'+(dias===null?'nenhum ainda':(dias===0?'hoje':'há '+dias+' dia'+(dias>1?'s':'')))+'</b>.';
   }
+  var elC = document.getElementById('infoConta');
+  if(elC) elC.innerHTML = 'Conectado como <b style="color:var(--tx)">'+esc((usuario&&usuario.email)||'—')+'</b>.';
 }
 function compactarAgora(){
   arquivarAntigos(true).then(function(n){
@@ -4174,8 +4373,12 @@ function iniciar(){
   setTimeout(function(){ arquivarAntigos(false).then(function(n){ if(n) console.log(n+' eventos arquivados'); }); }, 1500);
 }
 window.addEventListener('pagehide', function(){ if(usandoIDB) gravarJa(); });
-document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden' && usandoIDB) gravarJa(); });
-carregarTudo().then(iniciar).catch(function(e){ carregarDe({}); iniciar(); });
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='hidden'){ if(usandoIDB) gravarJa(); }
+  else sincronizarNuvem();
+});
+window.addEventListener('online', function(){ if(offline) flush(); });
+carregarTudo().then(function(){ iniciar(); ligarTempoReal(); }).catch(function(){ mostrarErroCarga(); });
 </script>
 </body>
 </html>
